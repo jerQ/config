@@ -16,7 +16,7 @@ link() {
 }
 
 echo "==> neovim"
-link "$REPO/neovim-minimal/init.lua" "$HOME/.config/nvim/init.lua"
+link "$REPO/neovim-minimal" "$HOME/.config/nvim"
 
 echo "==> tmux"
 link "$REPO/tmux-config" "$HOME/.config/tmux"
