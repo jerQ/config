@@ -7,7 +7,7 @@ vim.o.tabstop = 4
 vim.o.shiftwidth = 4
 vim.o.expandtab = true
 vim.o.swapfile = false
-vim.o.scl = yes
+vim.o.scl = "yes"
 vim.o.ignorecase = true
 vim.o.winborder = "rounded"
 vim.opt.completeopt = { "menuone", "noselect", "popup" }
@@ -83,7 +83,7 @@ vim.keymap.set('n', '<leader>lf', vim.lsp.buf.format)
 vim.keymap.set('n', '<leader>f', ":Pick files<CR>")
 vim.keymap.set('n', '<leader>h', ":Pick help<CR>")
 vim.keymap.set('n', '<leader>e', ":Oil<CR>")
-vim.keymap.set({ 'n', 'v', 'x' }, '<leader>y', '"+y<CR>')
-vim.keymap.set({ 'n', 'v', 'x' }, '<leader>d', '"+d<CR>')
+vim.keymap.set({ 'n', 'v', 'x' }, '<leader>y', '"+y')
+vim.keymap.set({ 'n', 'v', 'x' }, '<leader>d', '"+d')
 vim.keymap.set('n', '<leader>pc', pack_clean)
 
