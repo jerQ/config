@@ -1,0 +1,99 @@
+---
+- name: Build and install Neovim from source
+  hosts: all
+  become: true
+
+  vars:
+    neovim_build_dir: /tmp/neovim
+
+    build_deps_fedora:
+      - cmake
+      - gcc
+      - gcc-c++
+      - make
+      - gettext
+      - unzip
+      - curl
+      - ninja-build
+
+    build_deps_debian:
+      - cmake
+      - gcc
+      - g++
+      - make
+      - gettext
+      - unzip
+      - curl
+      - ninja-build
+
+    runtime_deps_fedora:
+      - ripgrep
+      - fzf
+
+    runtime_deps_debian:
+      - ripgrep
+      - fzf
+
+  tasks:
+    - name: Install build dependencies (Fedora)
+      dnf:
+        name: "{{ build_deps_fedora }}"
+        state: present
+      when: ansible_os_family == "RedHat"
+
+    - name: Install build dependencies (Debian/Ubuntu)
+      apt:
+        name: "{{ build_deps_debian }}"
+        state: present
+        update_cache: true
+      when: ansible_os_family == "Debian"
+
+    - name: Install runtime dependencies (Fedora)
+      dnf:
+        name: "{{ runtime_deps_fedora }}"
+        state: present
+      when: ansible_os_family == "RedHat"
+
+    - name: Install runtime dependencies (Debian/Ubuntu)
+      apt:
+        name: "{{ runtime_deps_debian }}"
+        state: present
+      when: ansible_os_family == "Debian"
+
+    - name: Fetch latest Neovim stable tag
+      uri:
+        url: https://api.github.com/repos/neovim/neovim/releases/latest
+        return_content: true
+      register: neovim_release
+
+    - name: Set Neovim version fact
+      set_fact:
+        neovim_version: "{{ neovim_release.json.tag_name }}"
+
+    - name: Print Neovim version
+      debug:
+        msg: "Building Neovim {{ neovim_version }}"
+
+    - name: Clone Neovim source at latest stable tag
+      git:
+        repo: https://github.com/neovim/neovim.git
+        dest: "{{ neovim_build_dir }}"
+        version: "{{ neovim_version }}"
+        depth: 1
+        force: true
+
+    - name: Build Neovim
+      make:
+        chdir: "{{ neovim_build_dir }}"
+        params:
+          CMAKE_BUILD_TYPE: RelWithDebInfo
+
+    - name: Install Neovim
+      make:
+        chdir: "{{ neovim_build_dir }}"
+        target: install
+
+    - name: Clean up build directory
+      file:
+        path: "{{ neovim_build_dir }}"
+        state: absent
