@@ -7,7 +7,7 @@ Personal dotfiles and system configuration.
 Clone the repo and run the install script:
 
 ```sh
-git clone https://github.com/jerQ/Config.git ~/.config/dotfiles
+git clone https://github.com/jerQ/config.git ~/.config/dotfiles
 cd ~/.config/dotfiles
 ./install.sh
 ```
@@ -114,6 +114,9 @@ Notable functions:
 
 | Name | Description |
 |------|-------------|
+| `lah` | `ls -lah --color=auto` |
+| `ll` | `ls -la --color=auto` |
+| `l` | `ls -l --color=auto` |
 | `commit` | Quick timestamped git commit (`git commit -m "commit <epoch>" -a`) |
 | `sb` / `sc` | Strip blank lines / strip commented lines from stdin |
 | `ff` | fzf with `cat -n` preview |
