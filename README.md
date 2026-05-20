@@ -132,14 +132,4 @@ Notable functions:
 
 ## ansible
 
-Playbooks for system provisioning.
-
-| Playbook | Description |
-|----------|-------------|
-| `update.yml` | Update all packages (Debian/Ubuntu via `apt`, Fedora via `dnf`) |
-
-Run against localhost:
-
-```sh
-ansible-playbook ansible/update.yml -i localhost,
-```
+Playbooks for system provisioning. See [ansible/README.md](ansible/README.md).
