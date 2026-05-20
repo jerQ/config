@@ -22,11 +22,11 @@ echo "==> tmux"
 link "$REPO/tmux-config" "$HOME/.config/tmux"
 
 echo "==> aliases"
-link "$REPO/aliases/aliases" "$HOME/.config/aliases"
+link "$REPO/aliases/aliases" "$HOME/.aliases"
 
-if ! grep -qF 'source "$HOME/.config/aliases"' "$HOME/.bashrc" 2>/dev/null; then
+if ! grep -qF 'source "$HOME/.aliases"' "$HOME/.bashrc" 2>/dev/null; then
     echo '' >> "$HOME/.bashrc"
-    echo 'source "$HOME/.config/aliases"' >> "$HOME/.bashrc"
+    echo 'source "$HOME/.aliases"' >> "$HOME/.bashrc"
     echo "  added aliases source to ~/.bashrc"
 else
     echo "  aliases already sourced in ~/.bashrc"
