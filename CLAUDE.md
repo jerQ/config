@@ -4,19 +4,25 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this repo is
 
-Personal dotfiles and system configuration. No build system, no tests, no linter. Changes here are applied manually by symlinking or copying files to their target locations.
+Personal dotfiles and system configuration. No build system, no tests, no linter. Run `install.sh` to deploy — it symlinks all configs to their target locations.
 
 ## Repository layout
 
 | Path | Purpose | Deployed to |
 |------|---------|-------------|
 | `aliases/aliases` | Bash aliases and shell functions | `~/.aliases`, sourced from `.bashrc` |
-| `tmux-config/tmux.conf` | Tmux configuration | `~/.config/tmux/tmux.conf` |
-| `tmux-config/default.theme` | Active Catppuccin Frappé palette (sourced by tmux.conf) | `~/.config/tmux/default.theme` |
-| `tmux-config/themes/` | Alternative themes (catppuccin variants, nord) | swap with `default.theme` to change theme |
-| `tmux-config/plugins/` | Vendored plugins: tpm, tmux-yank | `~/.config/tmux/plugins/` |
-| `neovim-minimal/init.lua` | Single-file Neovim config using native `vim.pack` | `~/.config/nvim/init.lua` |
+| `tmux-config/` | Tmux configuration and plugins | `~/.config/tmux` (directory symlink) |
+| `neovim-minimal/` | Single-file Neovim config using native `vim.pack` | `~/.config/nvim` (directory symlink) |
+| `install.sh` | Symlinks all configs to target locations | run from repo root |
 | `ansible/` | Empty — reserved for future provisioning playbooks | — |
+
+## Install
+
+```sh
+./install.sh
+```
+
+Safe to re-run — skips targets that are already correctly symlinked.
 
 ## Tmux
 
@@ -38,7 +44,10 @@ Leader key: `<Space>`
 
 Key mappings summary:
 - `<leader>o` — save and source current file
+- `<leader>w` — write
+- `<leader>q` — quit
 - `<leader>f` — file picker (mini.pick)
+- `<leader>h` — help picker (mini.pick)
 - `<leader>e` — oil file explorer
 - `<leader>lf` — LSP format
 - `<leader>pc` — remove unused plugins (`pack_clean`)
@@ -46,10 +55,15 @@ Key mappings summary:
 
 ## Aliases
 
-Notable functions in `aliases/aliases`:
+Notable aliases and functions in `aliases/aliases`:
+- `lah` — `ls -lah --color=auto`
+- `ll` — `ls -la --color=auto`
+- `l` — `ls -l --color=auto`
+- `grep` — `grep --color=auto`
+- `gi` / `gr` / `gri` — grep with `-i`, `-r`, `-ri`
+- `ff` — fzf with `cat -n` preview
 - `commit` — quick timestamped git commit (`git commit -m "commit <epoch>" -a`)
 - `sb` / `sc` — strip blank lines / strip commented lines from stdin
-- `ff` — fzf with bat preview
 - `open` — `xdg-open` wrapper (background, suppressed output)
 - `fixscreens` — disable laptop screen, use only HDMI-A-0
 - `caps2esc` / `caps2ctrl` — remap Caps Lock via xkbmap
