@@ -53,4 +53,6 @@ Notable: `lah`/`ll`/`l` ls variants, `grep`/`gi`/`gr`/`gri` grep variants, `ff` 
 
 ## Ansible
 
-Playbooks in `ansible/`. Currently: `update.yml` — updates all packages on Debian/Ubuntu (`apt`) and Fedora (`dnf`).
+Playbooks in `ansible/`:
+- `update.yml` — updates all packages on Debian/Ubuntu (`apt`) and Fedora (`dnf`)
+- `packages.yml` — installs common CLI tools, GUI apps, and third-party repos (VS Code, Brave)
