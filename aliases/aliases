@@ -1,4 +1,5 @@
 alias lah="ls -lah --color=auto"
+alias l.="ls -la --color=auto"
 
 # GIT commit with date timestamp
 commit () { git commit -m "commit $(date +%s)" -a; }
