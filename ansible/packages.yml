@@ -25,6 +25,7 @@
       - ansible
       - podman
       - keepassxc
+      - neovim
 
     packages_debian:
       - git
@@ -46,6 +47,7 @@
       - ansible
       - podman
       - keepassxc
+      - neovim
 
   tasks:
     - name: Install packages (Fedora)
