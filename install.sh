@@ -6,7 +6,12 @@ REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 link() {
     local src="$1" dst="$2"
     mkdir -p "$(dirname "$dst")"
-    ln -sfn "$src" "$dst"
+    if [ -L "$dst" ] && [ "$(readlink -f "$dst")" = "$(readlink -f "$src")" ]; then
+        echo "  ok: $dst"
+        return
+    fi
+    rm -rf "$dst"
+    ln -s "$src" "$dst"
     echo "  linked: $dst -> $src"
 }
 
