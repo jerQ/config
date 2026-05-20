@@ -56,3 +56,4 @@ Notable: `lah`/`ll`/`l` ls variants, `grep`/`gi`/`gr`/`gri` grep variants, `ff` 
 Playbooks in `ansible/`:
 - `update.yml` — updates all packages on Debian/Ubuntu (`apt`) and Fedora (`dnf`)
 - `packages.yml` — installs common CLI tools, GUI apps, and third-party repos (VS Code, Brave)
+- `neovim.yml` — fetches latest stable tag from GitHub, compiles, and installs Neovim to `/usr/local`
