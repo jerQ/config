@@ -19,10 +19,7 @@ echo "==> neovim"
 link "$REPO/neovim-minimal/init.lua" "$HOME/.config/nvim/init.lua"
 
 echo "==> tmux"
-link "$REPO/tmux-config/tmux.conf"     "$HOME/.config/tmux/tmux.conf"
-link "$REPO/tmux-config/default.theme" "$HOME/.config/tmux/default.theme"
-link "$REPO/tmux-config/plugins"       "$HOME/.config/tmux/plugins"
-link "$REPO/tmux-config/themes"        "$HOME/.config/tmux/themes"
+link "$REPO/tmux-config" "$HOME/.config/tmux"
 
 echo "==> aliases"
 link "$REPO/aliases/aliases" "$HOME/.config/aliases"
