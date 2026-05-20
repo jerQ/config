@@ -2,6 +2,18 @@
 
 Personal dotfiles and system configuration.
 
+## Install
+
+Clone the repo and run the install script:
+
+```sh
+git clone https://github.com/jerQ/Config.git ~/.config/dotfiles
+cd ~/.config/dotfiles
+./install.sh
+```
+
+This symlinks all configs to their target locations and adds the aliases source line to `~/.bashrc` if not already present. Safe to re-run for updates.
+
 ---
 
 ## tmux-config
