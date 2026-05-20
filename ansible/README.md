@@ -9,6 +9,7 @@ Playbooks for system provisioning.
 | `update.yml` | Update all packages (Debian/Ubuntu via `apt`, Fedora via `dnf`) |
 | `packages.yml` | Install common packages and third-party repos (VS Code, Brave) |
 | `neovim.yml` | Build and install latest Neovim from source |
+| `setup.yml` | Create `~/Devel`, clone config repo, and run `install.sh` |
 
 ## Usage
 
@@ -18,6 +19,7 @@ Run against localhost:
 ansible-playbook update.yml -i localhost,
 ansible-playbook packages.yml -i localhost,
 ansible-playbook neovim.yml -i localhost,
+ansible-playbook setup.yml -i localhost,
 ```
 
 ## packages.yml
