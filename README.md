@@ -18,7 +18,7 @@ This symlinks all configs to their target locations and adds the aliases source 
 
 ## tmux-config
 
-Deploy: symlink or copy `tmux-config/` contents to `~/.config/tmux/`.
+Deploy: symlink `tmux-config/` to `~/.config/tmux` (handled by `install.sh`).
 
 ### Prefix
 
@@ -67,7 +67,7 @@ themes/nord/nord.conf
 
 ## neovim-minimal
 
-Deploy: symlink or copy `neovim-minimal/init.lua` to `~/.config/nvim/init.lua`.
+Deploy: symlink `neovim-minimal/` to `~/.config/nvim` (handled by `install.sh`).
 
 Requires Neovim 0.11+ (uses native `vim.pack` — no lazy.nvim or packer).
 
