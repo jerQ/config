@@ -21,6 +21,8 @@ Each subdirectory has its own README with full details.
 ## Install
 
 ```sh
+git clone https://github.com/jerQ/config.git ~/Devel/config
+cd ~/Devel/config
 ./install.sh
 ```
 
