@@ -103,3 +103,20 @@ Leader key: `<Space>`
 | `<leader>y` | Yank to system clipboard |
 | `<leader>d` | Delete to system clipboard |
 | `<leader>pc` | Remove unused plugins |
+
+---
+
+## aliases
+
+Deploy: `install.sh` symlinks `aliases/aliases` to `~/.aliases` and adds `source "$HOME/.aliases"` to `~/.bashrc`.
+
+Notable functions:
+
+| Name | Description |
+|------|-------------|
+| `commit` | Quick timestamped git commit (`git commit -m "commit <epoch>" -a`) |
+| `sb` / `sc` | Strip blank lines / strip commented lines from stdin |
+| `ff` | fzf with bat preview |
+| `open` | `xdg-open` wrapper (background, suppressed output) |
+| `fixscreens` | Disable laptop screen, use only HDMI-A-0 |
+| `caps2esc` / `caps2ctrl` | Remap Caps Lock via xkbmap |

@@ -10,7 +10,7 @@ Personal dotfiles and system configuration. No build system, no tests, no linter
 
 | Path | Purpose | Deployed to |
 |------|---------|-------------|
-| `aliases/aliases` | Bash aliases and shell functions | `~/.config/aliases` or sourced from `.bashrc` |
+| `aliases/aliases` | Bash aliases and shell functions | `~/.aliases`, sourced from `.bashrc` |
 | `tmux-config/tmux.conf` | Tmux configuration | `~/.config/tmux/tmux.conf` |
 | `tmux-config/default.theme` | Active Catppuccin Frappé palette (sourced by tmux.conf) | `~/.config/tmux/default.theme` |
 | `tmux-config/themes/` | Alternative themes (catppuccin variants, nord) | swap with `default.theme` to change theme |
