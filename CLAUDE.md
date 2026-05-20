@@ -21,8 +21,10 @@ Personal dotfiles and system configuration. No build system, no tests, no linter
 ## Tmux
 
 - Prefix: `C-u`
-- Plugin manager: TPM (`plugins/tpm`). Run `<prefix> + I` inside tmux to install plugins after changes.
-- Theme is loaded via `run-shell "tmux source-file ~/.config/tmux/default.theme"` — swap the file to change theme, or point the `source-file` line to a different theme in `themes/`.
+- Terminal: `tmux-256color` with true-color override via `terminal-overrides`
+- Plugin manager: TPM (`tmux-plugins/tpm`). Run `<prefix> + I` inside tmux to install plugins after changes.
+- Plugins: `tmux-plugins/tmux-yank`, `christoomey/vim-tmux-navigator`
+- Theme: Catppuccin Frappé, loaded from `default.theme`. Swap with any file in `themes/` to change. Status bar colors (`status-bg purple`) are applied after the theme load and intentionally override it.
 - Reload config: `<prefix> + r`
 
 ## Neovim
