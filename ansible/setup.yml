@@ -1,0 +1,32 @@
+---
+- name: Set up user environment
+  hosts: all
+  become: false
+
+  vars:
+    config_repo: https://github.com/jerQ/config.git
+    config_dir: "{{ ansible_env.HOME }}/Devel/config"
+
+  tasks:
+    - name: Create ~/Devel directory
+      file:
+        path: "{{ ansible_env.HOME }}/Devel"
+        state: directory
+        mode: "0755"
+
+    - name: Clone config repo
+      git:
+        repo: "{{ config_repo }}"
+        dest: "{{ config_dir }}"
+        version: main
+        update: true
+
+    - name: Run install.sh
+      command:
+        cmd: bash install.sh
+        chdir: "{{ config_dir }}"
+      register: install_output
+
+    - name: Show install output
+      debug:
+        msg: "{{ install_output.stdout_lines }}"
