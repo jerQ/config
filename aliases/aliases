@@ -1,13 +1,13 @@
-alias lah="ls -lah"
+alias lah="ls -lah --color=auto"
 
 # GIT commit with date timestamp
 commit () { git commit -m "commit $(date +%s)" -a; }
 
 # Strip all blank lines from STDIN
-sb () { egrep -v '^($|[[:space:]]$)' -; }
+sb () { grep -Ev '^($|[[:space:]]$)' -; }
 
 # Strip all commented lines from STDIN
-sc () { egrep -v '^(#|[[:space:]]#)' -; }
+sc () { grep -Ev '^[[:space:]]*#' -; }
 
 # Disable laptop screen and use only external display
 alias fixscreens='xrandr --output HDMI-A-0 --auto --output eDP --off'
