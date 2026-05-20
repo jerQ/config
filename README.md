@@ -127,3 +127,19 @@ Notable functions:
 | `open` | `xdg-open` wrapper (background, suppressed output) |
 | `fixscreens` | Disable laptop screen, use only HDMI-A-0 |
 | `caps2esc` / `caps2ctrl` | Remap Caps Lock via xkbmap |
+
+---
+
+## ansible
+
+Playbooks for system provisioning.
+
+| Playbook | Description |
+|----------|-------------|
+| `update.yml` | Update all packages (Debian/Ubuntu via `apt`, Fedora via `dnf`) |
+
+Run against localhost:
+
+```sh
+ansible-playbook ansible/update.yml -i localhost,
+```
