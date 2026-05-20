@@ -5,3 +5,40 @@
 - Uses native plugin manager
 - Catppuccin
 - Avoid bloat
+
+Deploy: symlink `neovim-minimal/` to `~/.config/nvim` (handled by `install.sh`).
+
+Requires Neovim 0.11+ (uses native `vim.pack` — no lazy.nvim or packer).
+
+## Plugins
+
+- `catppuccin/nvim` — colorscheme
+- `stevearc/oil.nvim` — file explorer
+- `echasnovski/mini.pick` — fuzzy picker
+- `neovim/nvim-lspconfig` — LSP configurations
+
+Install plugins by running `:packadd` or letting `vim.pack.add` fetch them on first launch.  
+Remove unused plugins with `<leader>pc`.
+
+## LSP
+
+Servers enabled: `lua_ls`, `clangd`, `pyright`. These must be installed separately on the system.
+
+Autocompletion triggers on every keypress via `vim.lsp.completion`.
+
+## Keybindings
+
+Leader key: `<Space>`
+
+| Key | Action |
+|-----|--------|
+| `<leader>o` | Save and source current file |
+| `<leader>w` | Write |
+| `<leader>q` | Quit |
+| `<leader>f` | File picker (mini.pick) |
+| `<leader>h` | Help picker (mini.pick) |
+| `<leader>e` | Oil file explorer |
+| `<leader>lf` | LSP format |
+| `<leader>y` | Yank to system clipboard |
+| `<leader>d` | Delete to system clipboard |
+| `<leader>pc` | Remove unused plugins |
