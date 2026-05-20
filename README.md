@@ -7,8 +7,8 @@ Personal dotfiles and system configuration.
 Clone the repo and run the install script:
 
 ```sh
-git clone https://github.com/jerQ/config.git ~/.config/dotfiles
-cd ~/.config/dotfiles
+git clone https://github.com/jerQ/config.git ~/Devel/config
+cd ~/Devel/config
 ./install.sh
 ```
 
