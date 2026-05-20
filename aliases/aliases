@@ -14,7 +14,7 @@ alias fixscreens='xrandr --output HDMI-A-0 --auto --output eDP --off'
 #
 
 # FZF
-alias ff="fzf --preview 'bat --style=numbers --color=always {}'"
+alias ff="fzf --preview 'cat -n {}'"
 
 open() {
   xdg-open "$@" >/dev/null 2>&1 &
