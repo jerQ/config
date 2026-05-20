@@ -116,7 +116,7 @@ Notable functions:
 |------|-------------|
 | `commit` | Quick timestamped git commit (`git commit -m "commit <epoch>" -a`) |
 | `sb` / `sc` | Strip blank lines / strip commented lines from stdin |
-| `ff` | fzf with bat preview |
+| `ff` | fzf with `cat -n` preview |
 | `open` | `xdg-open` wrapper (background, suppressed output) |
 | `fixscreens` | Disable laptop screen, use only HDMI-A-0 |
 | `caps2esc` / `caps2ctrl` | Remap Caps Lock via xkbmap |
