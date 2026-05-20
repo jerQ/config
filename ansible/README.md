@@ -24,7 +24,7 @@ ansible-playbook neovim.yml -i localhost,
 
 Installs the following:
 
-**CLI tools:** `git`, `gh`, `curl`, `fzf`, `ripgrep`, `tree`, `tmux`, `bat`, `cmake`, `make`, `gcc`, `autoconf`, `automake`, `golang`, `cargo`, `python3`, `ansible`, `podman`
+**CLI tools:** `git`, `gh`, `curl`, `fzf`, `ripgrep`, `tree`, `tmux`, `bat`, `cmake`, `make`, `gcc`, `autoconf`, `automake`, `golang`, `cargo`, `python3`, `ansible`, `podman`, `neovim`
 
 **GUI apps:** `keepassxc`
 
