@@ -6,6 +6,7 @@ Playbooks for system provisioning.
 
 | Playbook | Description |
 |----------|-------------|
+| `main.yml` | Run all playbooks in order |
 | `update.yml` | Update all packages (Debian/Ubuntu via `apt`, Fedora via `dnf`) |
 | `packages.yml` | Install common packages and third-party repos (VS Code, Brave) |
 | `neovim.yml` | Build and install latest Neovim from source |
@@ -13,7 +14,13 @@ Playbooks for system provisioning.
 
 ## Usage
 
-Run against localhost:
+Run all playbooks:
+
+```sh
+ansible-playbook main.yml -i localhost,
+```
+
+Or run individually:
 
 ```sh
 ansible-playbook update.yml -i localhost,
