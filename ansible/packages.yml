@@ -1,0 +1,96 @@
+---
+- name: Install common packages
+  hosts: all
+  become: true
+
+  vars:
+    packages_fedora:
+      - git
+      - gh
+      - curl
+      - fzf
+      - ripgrep
+      - tree
+      - tmux
+      - bat
+      - cmake
+      - make
+      - gcc
+      - gcc-c++
+      - autoconf
+      - automake
+      - golang
+      - cargo
+      - python3
+      - ansible
+      - podman
+      - keepassxc
+
+    packages_debian:
+      - git
+      - curl
+      - fzf
+      - ripgrep
+      - tree
+      - tmux
+      - bat
+      - cmake
+      - make
+      - gcc
+      - g++
+      - autoconf
+      - automake
+      - golang-go
+      - cargo
+      - python3
+      - ansible
+      - podman
+      - keepassxc
+
+  tasks:
+    - name: Install packages (Fedora)
+      dnf:
+        name: "{{ packages_fedora }}"
+        state: present
+      when: ansible_os_family == "RedHat"
+
+    - name: Install packages (Debian/Ubuntu)
+      apt:
+        name: "{{ packages_debian }}"
+        state: present
+        update_cache: true
+      when: ansible_os_family == "Debian"
+
+    # VS Code — requires Microsoft repo
+    - name: Add VS Code repo (Fedora)
+      yum_repository:
+        name: vscode
+        description: Visual Studio Code
+        baseurl: https://packages.microsoft.com/yumrepos/vscode
+        gpgkey: https://packages.microsoft.com/keys/microsoft.asc
+        gpgcheck: true
+        enabled: true
+      when: ansible_os_family == "RedHat"
+
+    - name: Install VS Code (Fedora)
+      dnf:
+        name: code
+        state: present
+      when: ansible_os_family == "RedHat"
+
+    # Brave Browser — requires Brave repo
+    - name: Add Brave repo (Fedora)
+      yum_repository:
+        name: brave-browser
+        description: Brave Browser
+        baseurl: https://brave-browser-rpm-release.s3.brave.com/x86_64/
+        gpgkey: https://brave-browser-rpm-release.s3.brave.com/brave-core.asc
+        gpgcheck: true
+        enabled: true
+      when: ansible_os_family == "RedHat"
+
+    - name: Install Brave Browser (Fedora)
+      dnf:
+        name: brave-browser
+        state: present
+      when: ansible_os_family == "RedHat"
