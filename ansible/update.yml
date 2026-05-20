@@ -1,0 +1,20 @@
+---
+- name: Update operating system
+  hosts: all
+  become: true
+
+  tasks:
+    - name: Update all packages (Debian/Ubuntu)
+      apt:
+        upgrade: dist
+        update_cache: true
+        autoremove: true
+        autoclean: true
+      when: ansible_os_family == "Debian"
+
+    - name: Update all packages (Fedora)
+      dnf:
+        name: "*"
+        state: latest
+        update_cache: true
+      when: ansible_os_family == "RedHat"
