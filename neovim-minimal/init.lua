@@ -11,6 +11,7 @@ vim.o.scl = "yes"
 vim.o.ignorecase = true
 vim.o.winborder = "rounded"
 vim.opt.completeopt = { "menuone", "noselect", "popup" }
+vim.o.colorcolumn = "80"
 
 -- PLUGINS
 vim.pack.add({
