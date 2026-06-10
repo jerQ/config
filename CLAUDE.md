@@ -11,6 +11,8 @@ Personal dotfiles and system configuration. No build system, no tests, no linter
 | Path | Purpose | Deployed to |
 |------|---------|-------------|
 | `aliases/aliases` | Bash aliases and shell functions | `~/.aliases`, sourced from `.bashrc` |
+| `fzf/fzf.bash` | fzf shell integration for bash | `~/.fzf.bash`, sourced from `.bashrc` |
+| `fzf/fzf.zsh` | fzf shell integration for zsh | `~/.fzf.zsh`, sourced from `.zshrc` |
 | `tmux-config/` | Tmux configuration and plugins | `~/.config/tmux` (directory symlink) |
 | `neovim-minimal/` | Single-file Neovim config using native `vim.pack` | `~/.config/nvim` (directory symlink) |
 | `ansible/` | Provisioning playbooks | — |
@@ -50,6 +52,17 @@ Leader: `<Space>`. Key mappings: `<leader>f` file picker, `<leader>e` oil, `<lea
 File: `aliases/aliases` → `~/.aliases`, sourced from `~/.bashrc`.
 
 Notable: `lah`/`ll`/`l` ls variants, `grep`/`gi`/`gr`/`gri` grep variants, `ff` fzf picker, `commit` timestamped git commit, `sb`/`sc` stdin filters, `open` xdg-open wrapper, `fixscreens`, `caps2esc`/`caps2ctrl`.
+
+## FZF
+
+Files: `fzf/fzf.bash` → `~/.fzf.bash`, `fzf/fzf.zsh` → `~/.fzf.zsh`, sourced from `~/.bashrc` / `~/.zshrc`.
+
+Key bindings (requires `fzf` installed via system package manager):
+- `Ctrl+R` — fzf history search
+- `Ctrl+T` — fzf file picker (pastes path into command line)
+- `Alt+C` — fzf directory picker (`cd` into selection)
+
+Theme: Catppuccin Frappé colors via `FZF_DEFAULT_OPTS`. System integration files sourced from `/usr/share/fzf/shell/` (Fedora package path).
 
 ## Ansible
 
