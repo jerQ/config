@@ -32,4 +32,24 @@ else
     echo "  aliases already sourced in ~/.bashrc"
 fi
 
+echo "==> fzf"
+link "$REPO/fzf/fzf.bash" "$HOME/.fzf.bash"
+link "$REPO/fzf/fzf.zsh"  "$HOME/.fzf.zsh"
+
+if ! grep -qF '.fzf.bash' "$HOME/.bashrc" 2>/dev/null; then
+    echo '' >> "$HOME/.bashrc"
+    echo '[ -f "$HOME/.fzf.bash" ] && source "$HOME/.fzf.bash"' >> "$HOME/.bashrc"
+    echo "  added fzf source to ~/.bashrc"
+else
+    echo "  fzf already sourced in ~/.bashrc"
+fi
+
+if ! grep -qF '.fzf.zsh' "$HOME/.zshrc" 2>/dev/null; then
+    echo '' >> "$HOME/.zshrc"
+    echo '[ -f "$HOME/.fzf.zsh" ] && source "$HOME/.fzf.zsh"' >> "$HOME/.zshrc"
+    echo "  added fzf source to ~/.zshrc"
+else
+    echo "  fzf already sourced in ~/.zshrc"
+fi
+
 echo "done"
