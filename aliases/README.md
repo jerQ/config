@@ -13,7 +13,7 @@ Deploy: `install.sh` symlinks `aliases/aliases` to `~/.aliases` and adds `source
 | `gi` | `grep -i` — case-insensitive |
 | `gr` | `grep -r` — recursive |
 | `gri` | `grep -ri` — recursive + case-insensitive |
-| `ff` | fzf with `cat -n` preview |
+| `ff` | fzf file picker with `cat -n` line-number preview (`fzf --preview 'cat -n {}'`) |
 | `open` | `xdg-open` wrapper (background, suppressed output) |
 | `fixscreens` | Disable laptop screen, use only HDMI-A-0 |
 | `caps2esc` / `caps2ctrl` | Remap Caps Lock via xkbmap |
