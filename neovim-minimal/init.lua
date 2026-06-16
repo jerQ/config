@@ -10,7 +10,6 @@ vim.o.swapfile = false
 vim.o.scl = "yes"
 vim.o.ignorecase = true
 vim.o.winborder = "rounded"
-vim.opt.completeopt = { "menuone", "noselect", "popup" }
 vim.o.colorcolumn = "80"
 
 -- PLUGINS
@@ -27,22 +26,55 @@ require("mini.pick").setup()
 require("oil").setup()
 
 -- LSP
-vim.lsp.enable({ "lua_ls", "clangd", "pyright" })
+-- Enable autocomplete
+vim.opt.autocomplete = true
+vim.opt.completeopt = { "menuone", "noselect", "noinsert", "popup" }
+
+-- Start language servers
+local function start_lsp(server_name, cmd, filetypes)
+  vim.api.nvim_create_autocmd("FileType", {
+    pattern = filetypes,
+    callback = function(args)
+      vim.lsp.start({
+        name = server_name,
+        cmd = cmd,
+        root_dir = vim.fs.root(args.buf, { ".git", "pyproject.toml", "setup.py", "compile_commands.json" }),
+        -- Automatically bind Neovim's completion key to the LSP engine
+        on_attach = function(client, bufnr)
+          vim.bo[bufnr].omnifunc = "v:lua.vim.lsp.omnifunc"
+        end,
+      })
+    end,
+  })
+end
+
+-- Launch servers 
+start_lsp("pyright", { "pyright-langserver", "--stdio" }, { "python" })
+start_lsp("clangd", { "clangd" }, { "c", "cpp", "objc", "objcpp" })
+start_lsp("lua_ls", { "lua-language-server" }, { "lua" })
+
+-- Mappings for LSP navigation
+vim.keymap.set('n', 'gd', vim.lsp.buf.definition, { desc = "Go to Definition" })
+vim.keymap.set('n', 'K', vim.lsp.buf.hover, { desc = "Hover Documentation" })
+vim.keymap.set('n', '<leader>rn', vim.lsp.buf.rename, { desc = "Rename Symbol" })
+
+-- LSP (ORIG)
+-- vim.lsp.enable({ "lua_ls", "clangd", "pyright" })
 
 -- LSP Autocmd
-vim.api.nvim_create_autocmd('LspAttach', {
-	group = vim.api.nvim_create_augroup('my.lsp', {}),
-	callback = function(args)
-		local client = assert(vim.lsp.get_client_by_id(args.data.client_id))
-		if client:supports_method('textDocument/completion') then
-			-- Optional: trigger autocompletion on EVERY keypress. May be slow!
-			local chars = {}; for i = 32, 126 do table.insert(chars, string.char(i)) end
-			client.server_capabilities.completionProvider.triggerCharacters = chars
-			vim.lsp.completion.enable(true, client.id, args.buf, { autotrigger = true })
-		end
-	end,
-})
-
+-- vim.api.nvim_create_autocmd('LspAttach', {
+-- 	group = vim.api.nvim_create_augroup('my.lsp', {}),
+-- 	callback = function(args)
+-- 		local client = assert(vim.lsp.get_client_by_id(args.data.client_id))
+-- 		if client:supports_method('textDocument/completion') then
+-- 			-- Optional: trigger autocompletion on EVERY keypress. May be slow!
+-- 			local chars = {}; for i = 32, 126 do table.insert(chars, string.char(i)) end
+-- 			client.server_capabilities.completionProvider.triggerCharacters = chars
+-- 			vim.lsp.completion.enable(true, client.id, args.buf, { autotrigger = true })
+-- 		end
+-- 	end,
+--}-- )
+-- 
 
 -- COLORSCHEME
 vim.cmd("colorscheme catppuccin")
