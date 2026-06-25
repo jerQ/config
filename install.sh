@@ -72,4 +72,6 @@ else
     echo "  env already sourced in ~/.zshrc"
 fi
 
+echo ""
+echo "note: run 'git submodule update --init --recursive' if tmux plugins are missing"
 echo "done"
