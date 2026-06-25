@@ -4,10 +4,10 @@ Personal dotfiles and system configuration.
 
 ## Install
 
-Clone the repo (with submodules) and run the install script:
+Clone the repo and run the install script (submodules are initialized automatically):
 
 ```sh
-git clone --recurse-submodules https://github.com/jerQ/config.git ~/Devel/config
+git clone https://github.com/jerQ/config.git ~/Devel/config
 cd ~/Devel/config
 ./install.sh
 ```
