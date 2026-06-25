@@ -25,7 +25,16 @@ alias gri='grep -ri'
 alias ff="fzf --preview 'cat -n {}'"
 
 # cht.sh cheat sheets
-cht() { curl -s "cht.sh/${*// //}" | less -R; }
+#cht() { curl -s "cht.sh/${*// //}" | less -R; }
+cht() {
+    if [ $# -eq 0 ]; then
+        curl -s "https://cht.sh"
+    else
+        local query=$(echo "$*" | tr ' ' '+')
+        curl -s "https://cht.sh/${query}" | less -R
+    fi
+}
+
 
 open() {
   xdg-open "$@" >/dev/null 2>&1 &
