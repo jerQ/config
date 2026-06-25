@@ -25,3 +25,4 @@ Deploy: `install.sh` symlinks `aliases/aliases` to `~/.aliases` and adds `source
 | `commit` | Quick timestamped git commit (`git commit -m "commit <epoch>" -a`) |
 | `sb` | Strip blank lines from stdin |
 | `sc` | Strip commented lines from stdin |
+| `cht` | cht.sh cheat sheet lookup — `cht <topic> [query]` (e.g. `cht git stash`) |

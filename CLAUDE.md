@@ -53,7 +53,7 @@ Leader: `<Space>`. Key mappings: `<leader>f` file picker, `<leader>e` oil, `<lea
 
 File: `aliases/aliases` → `~/.aliases`, sourced from `~/.bashrc`.
 
-Notable: `lah`/`ll`/`l` ls variants, `grep`/`gi`/`gr`/`gri` grep variants, `ff` fzf picker, `commit` timestamped git commit, `sb`/`sc` stdin filters, `open` xdg-open wrapper, `fixscreens`, `caps2esc`/`caps2ctrl`.
+Notable: `lah`/`ll`/`l` ls variants, `grep`/`gi`/`gr`/`gri` grep variants, `ff` fzf picker, `commit` timestamped git commit, `sb`/`sc` stdin filters, `open` xdg-open wrapper, `fixscreens`, `caps2esc`/`caps2ctrl`, `cht` cht.sh cheat sheet lookup.
 
 ## FZF
 
