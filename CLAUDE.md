@@ -13,8 +13,8 @@ Personal dotfiles and system configuration. No build system, no tests, no linter
 | `aliases/aliases` | Bash aliases and shell functions | `~/.aliases`, sourced from `.bashrc` |
 | `fzf/fzf.bash` | fzf shell integration for bash | `~/.fzf.bash`, sourced from `.bashrc` |
 | `fzf/fzf.zsh` | fzf shell integration for zsh | `~/.fzf.zsh`, sourced from `.zshrc` |
-| `golang/golang.bash` | Go environment variables for bash | `~/.golang.bash`, sourced from `.bashrc` |
-| `golang/golang.zsh` | Go environment variables for zsh | `~/.golang.zsh`, sourced from `.zshrc` |
+| `env/env.bash` | PATH and environment variables for bash | `~/.env.bash`, sourced from `.bashrc` |
+| `env/env.zsh` | PATH and environment variables for zsh | `~/.env.zsh`, sourced from `.zshrc` |
 | `tmux-config/` | Tmux configuration and plugins | `~/.config/tmux` (directory symlink) |
 | `neovim-minimal/` | Single-file Neovim config using native `vim.pack` | `~/.config/nvim` (directory symlink) |
 | `ansible/` | Provisioning playbooks | — |
@@ -66,13 +66,13 @@ Key bindings (requires `fzf` installed via system package manager):
 
 Theme: Catppuccin Frappé colors via `FZF_DEFAULT_OPTS`. System integration files sourced from `/usr/share/fzf/shell/` (Fedora package path).
 
-## Go
+## Env
 
-Files: `golang/golang.bash` → `~/.golang.bash`, `golang/golang.zsh` → `~/.golang.zsh`, sourced from `~/.bashrc` / `~/.zshrc`.
+Files: `env/env.bash` → `~/.env.bash`, `env/env.zsh` → `~/.env.zsh`, sourced from `~/.bashrc` / `~/.zshrc`.
 
 Sets:
 - `GOPATH="$HOME/go"` — Go workspace directory
-- `PATH` — appends `$GOPATH/bin` for installed Go binaries
+- `PATH` — appends `$GOPATH/bin`, `$HOME/.cargo/bin`, `$HOME/.local/bin`
 
 ## Ansible
 

@@ -52,24 +52,24 @@ else
     echo "  fzf already sourced in ~/.zshrc"
 fi
 
-echo "==> golang"
-link "$REPO/golang/golang.bash" "$HOME/.golang.bash"
-link "$REPO/golang/golang.zsh"  "$HOME/.golang.zsh"
+echo "==> env"
+link "$REPO/env/env.bash" "$HOME/.env.bash"
+link "$REPO/env/env.zsh"  "$HOME/.env.zsh"
 
-if ! grep -qF '.golang.bash' "$HOME/.bashrc" 2>/dev/null; then
+if ! grep -qF '.env.bash' "$HOME/.bashrc" 2>/dev/null; then
     echo '' >> "$HOME/.bashrc"
-    echo '[ -f "$HOME/.golang.bash" ] && source "$HOME/.golang.bash"' >> "$HOME/.bashrc"
-    echo "  added golang source to ~/.bashrc"
+    echo '[ -f "$HOME/.env.bash" ] && source "$HOME/.env.bash"' >> "$HOME/.bashrc"
+    echo "  added env source to ~/.bashrc"
 else
-    echo "  golang already sourced in ~/.bashrc"
+    echo "  env already sourced in ~/.bashrc"
 fi
 
-if ! grep -qF '.golang.zsh' "$HOME/.zshrc" 2>/dev/null; then
+if ! grep -qF '.env.zsh' "$HOME/.zshrc" 2>/dev/null; then
     echo '' >> "$HOME/.zshrc"
-    echo '[ -f "$HOME/.golang.zsh" ] && source "$HOME/.golang.zsh"' >> "$HOME/.zshrc"
-    echo "  added golang source to ~/.zshrc"
+    echo '[ -f "$HOME/.env.zsh" ] && source "$HOME/.env.zsh"' >> "$HOME/.zshrc"
+    echo "  added env source to ~/.zshrc"
 else
-    echo "  golang already sourced in ~/.zshrc"
+    echo "  env already sourced in ~/.zshrc"
 fi
 
 echo "done"
