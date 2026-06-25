@@ -1,3 +1,6 @@
 [submodule "tmux-config/plugins/vim-tmux-navigator"]
 	path = tmux-config/plugins/vim-tmux-navigator
 	url = https://github.com/christoomey/vim-tmux-navigator
+[submodule "tmux-config/plugins/tpm"]
+	path = tmux-config/plugins/tpm
+	url = https://github.com/tmux-plugins/tpm

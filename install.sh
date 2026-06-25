@@ -15,6 +15,14 @@ link() {
     echo "  linked: $dst -> $src"
 }
 
+echo "==> cleanup"
+for stale in "$HOME/.golang.bash" "$HOME/.golang.zsh"; do
+    if [ -L "$stale" ] && [ ! -e "$stale" ]; then
+        rm "$stale"
+        echo "  removed stale symlink: $stale"
+    fi
+done
+
 echo "==> neovim"
 link "$REPO/neovim-minimal" "$HOME/.config/nvim"
 
@@ -30,6 +38,14 @@ if ! grep -qF 'source "$HOME/.aliases"' "$HOME/.bashrc" 2>/dev/null; then
     echo "  added aliases source to ~/.bashrc"
 else
     echo "  aliases already sourced in ~/.bashrc"
+fi
+
+if ! grep -qF 'source "$HOME/.aliases"' "$HOME/.zshrc" 2>/dev/null; then
+    echo '' >> "$HOME/.zshrc"
+    echo 'source "$HOME/.aliases"' >> "$HOME/.zshrc"
+    echo "  added aliases source to ~/.zshrc"
+else
+    echo "  aliases already sourced in ~/.zshrc"
 fi
 
 echo "==> fzf"
