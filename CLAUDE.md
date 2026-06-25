@@ -36,7 +36,7 @@ Safe to re-run — skips targets that are already correctly symlinked.
 
 - Prefix: `C-u`
 - Plugin manager: TPM (`tmux-plugins/tpm`). Run `<prefix> + I` inside tmux to install plugins after changes.
-- Plugins: `tmux-plugins/tmux-yank`, `christoomey/vim-tmux-navigator`
+- Plugins: `tmux-plugins/tmux-yank`, `christoomey/vim-tmux-navigator` (git submodule at `tmux-config/plugins/vim-tmux-navigator`)
 - Theme: Catppuccin Frappé (`default.theme`). Swap with any file in `themes/` to change.
 - Reload config: `<prefix> + r`
 
