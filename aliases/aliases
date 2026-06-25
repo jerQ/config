@@ -24,6 +24,9 @@ alias gri='grep -ri'
 # FZF
 alias ff="fzf --preview 'cat -n {}'"
 
+# cht.sh cheat sheets
+cht() { curl -s "cht.sh/${*// //}" | less -R; }
+
 open() {
   xdg-open "$@" >/dev/null 2>&1 &
 }
