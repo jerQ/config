@@ -1,0 +1,3 @@
+[submodule "tmux-config/plugins/vim-tmux-navigator"]
+	path = tmux-config/plugins/vim-tmux-navigator
+	url = https://github.com/christoomey/vim-tmux-navigator
