@@ -48,6 +48,9 @@ alias ....='cd ../../..'
 # BAT
 alias cat='bat'
 
+# ZOXIDE
+alias cd='z'
+
 # FD (Debian compat — Fedora binary is already 'fd')
 command -v fdfind &>/dev/null && alias fd='fdfind'
 
