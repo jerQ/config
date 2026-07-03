@@ -48,6 +48,12 @@ alias ....='cd ../../..'
 # BAT
 alias cat='bat'
 
+# FD (Debian compat — Fedora binary is already 'fd')
+command -v fdfind &>/dev/null && alias fd='fdfind'
+
+# RIPGREP
+alias rgi='rg -i'
+
 # GH
 alias prs='gh pr list'
 alias prc='gh pr create'
