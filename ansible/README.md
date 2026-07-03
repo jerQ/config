@@ -10,6 +10,7 @@ Playbooks for system provisioning.
 | `update.yml` | Update all packages (Debian/Ubuntu via `apt`, Fedora via `dnf`) |
 | `packages.yml` | Install common packages and third-party repos (VS Code, Brave) |
 | `neovim.yml` | Build and install latest Neovim from source |
+| `lua-language-server.yml` | Install latest lua-language-server release from GitHub |
 | `setup.yml` | Create `~/Devel`, clone config repo, and run `install.sh` |
 
 ## Usage
@@ -26,6 +27,7 @@ Or run individually:
 ansible-playbook -i inventory.ini update.yml
 ansible-playbook -i inventory.ini packages.yml
 ansible-playbook -i inventory.ini neovim.yml
+ansible-playbook -i inventory.ini lua-language-server.yml
 ansible-playbook -i inventory.ini setup.yml
 ```
 

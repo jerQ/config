@@ -1,0 +1,40 @@
+---
+- name: Install lua-language-server from latest GitHub release
+  hosts: all
+  become: true
+
+  vars:
+    lua_ls_install_dir: /usr/local/lua-language-server
+
+  tasks:
+    - name: Fetch latest lua-language-server release
+      uri:
+        url: https://api.github.com/repos/LuaLS/lua-language-server/releases/latest
+        return_content: true
+      register: lua_ls_release
+
+    - name: Set lua-language-server version fact
+      set_fact:
+        lua_ls_version: "{{ lua_ls_release.json.tag_name }}"
+
+    - name: Print lua-language-server version
+      debug:
+        msg: "Installing lua-language-server {{ lua_ls_version }}"
+
+    - name: Create install directory
+      file:
+        path: "{{ lua_ls_install_dir }}"
+        state: directory
+        mode: "0755"
+
+    - name: Download and extract lua-language-server
+      unarchive:
+        src: "https://github.com/LuaLS/lua-language-server/releases/download/{{ lua_ls_version }}/lua-language-server-{{ lua_ls_version }}-linux-x64.tar.gz"
+        dest: "{{ lua_ls_install_dir }}"
+        remote_src: true
+
+    - name: Symlink lua-language-server into PATH
+      file:
+        src: "{{ lua_ls_install_dir }}/bin/lua-language-server"
+        dest: /usr/local/bin/lua-language-server
+        state: link
