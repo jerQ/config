@@ -11,6 +11,7 @@ vim.o.scl = "yes"
 vim.o.ignorecase = true
 vim.o.winborder = "rounded"
 vim.o.colorcolumn = "80"
+vim.o.termguicolors = true
 
 -- PLUGINS
 vim.pack.add({
@@ -56,6 +57,9 @@ start_lsp("lua_ls", { "lua-language-server" }, { "lua" })
 vim.keymap.set('n', 'gd', vim.lsp.buf.definition, { desc = "Go to Definition" })
 vim.keymap.set('n', 'K', vim.lsp.buf.hover, { desc = "Hover Documentation" })
 vim.keymap.set('n', '<leader>rn', vim.lsp.buf.rename, { desc = "Rename Symbol" })
+vim.keymap.set('n', ']d', vim.diagnostic.goto_next, { desc = "Next Diagnostic" })
+vim.keymap.set('n', '[d', vim.diagnostic.goto_prev, { desc = "Prev Diagnostic" })
+vim.keymap.set('n', '<leader>D', vim.diagnostic.open_float, { desc = "Show Diagnostic" })
 
 -- LSP (ORIG)
 -- vim.lsp.enable({ "lua_ls", "clangd", "pyright" })
