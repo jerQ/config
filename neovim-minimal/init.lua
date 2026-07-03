@@ -17,7 +17,6 @@ vim.pack.add({
     { src = "https://github.com/catppuccin/nvim" },
     { src = "https://github.com/stevearc/oil.nvim" },
     { src = "https://github.com/echasnovski/mini.pick" },
-    { src = "https://github.com/neovim/nvim-lspconfig" },
     { src = "https://github.com/christoomey/vim-tmux-navigator" },
 })
 
