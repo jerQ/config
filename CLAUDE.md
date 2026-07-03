@@ -47,7 +47,7 @@ Single-file config (`neovim-minimal/init.lua`) using Neovim's native `vim.pack` 
 Plugins: catppuccin, oil.nvim, mini.pick, vim-tmux-navigator.
 LSP servers: `lua_ls`, `clangd`, `pyright` (must be installed separately).
 
-Leader: `<Space>`. Key mappings: `<leader>f` file picker, `<leader>e` oil, `<leader>lf` LSP format, `<leader>y/d` clipboard yank/delete, `<leader>pc` remove unused plugins.
+Leader: `<Space>`. Key mappings: `<leader>f` file picker, `<leader>e` oil, `<leader>lf` LSP format, `<leader>y/d` clipboard yank/delete, `<leader>pc` remove unused plugins, `<leader>rn` rename symbol, `<leader>D` show diagnostic float, `]d`/`[d` next/prev diagnostic, `gd` go to definition, `K` hover docs.
 
 ## Aliases
 
