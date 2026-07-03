@@ -9,6 +9,7 @@
       - gh
       - curl
       - fzf
+      - zoxide
       - ripgrep
       - tree
       - tmux
@@ -31,6 +32,7 @@
       - git
       - curl
       - fzf
+      - zoxide
       - ripgrep
       - tree
       - tmux

@@ -73,6 +73,7 @@ Files: `env/env.bash` → `~/.env.bash`, `env/env.zsh` → `~/.env.zsh`, sourced
 Sets:
 - `GOPATH="$HOME/go"` — Go workspace directory
 - `PATH` — appends `$GOPATH/bin`, `$HOME/.cargo/bin`, `$HOME/.local/bin`
+- Initializes `zoxide` (smart `cd`) via `eval "$(zoxide init <shell>)"` if installed
 
 ## Ansible
 
