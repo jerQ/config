@@ -30,6 +30,8 @@
       - keepassxc
       - neovim
       - lua-language-server
+      - clangd
+      - pyright
 
     packages_debian:
       - git
@@ -56,6 +58,8 @@
       - keepassxc
       - neovim
       - lua-language-server
+      - clangd
+      - pyright
 
   tasks:
     - name: Install packages (Fedora)
