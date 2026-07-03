@@ -1,7 +1,7 @@
 # neovim-minimal
 
 - Truly simplistic, the most basic nvim config
-- Single file configuration with less than 100 lines of code
+- Single file configuration (~125 lines)
 - Uses native plugin manager
 - Catppuccin
 - Avoid bloat
@@ -24,7 +24,7 @@ Remove unused plugins with `<leader>pc`.
 
 Servers enabled: `lua_ls`, `clangd`, `pyright`. These must be installed separately on the system.
 
-Autocompletion triggers on every keypress via `vim.lsp.completion`.
+Autocompletion via `vim.opt.autocomplete = true` (Neovim native).
 
 ## Keybindings
 

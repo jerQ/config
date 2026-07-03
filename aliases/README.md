@@ -22,6 +22,7 @@ Deploy: `install.sh` symlinks `aliases/aliases` to `~/.aliases` and adds `source
 | `prc` | `gh pr create` — create a PR |
 | `open` | `xdg-open` wrapper (background, suppressed output) |
 | `fixscreens` | Disable laptop screen, use only HDMI-A-0 |
+| `..` / `...` / `....` | `cd` up 1 / 2 / 3 levels |
 | `caps2esc` / `caps2ctrl` | Remap Caps Lock via xkbmap |
 
 ## Functions
