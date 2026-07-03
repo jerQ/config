@@ -2,5 +2,4 @@
 - import_playbook: update.yml
 - import_playbook: packages.yml
 - import_playbook: neovim.yml
-- import_playbook: lua-language-server.yml
 - import_playbook: setup.yml

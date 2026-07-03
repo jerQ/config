@@ -1,10 +1,11 @@
 ---
-- name: Build and install Neovim from source
+- name: Install Neovim and LSP servers
   hosts: all
   become: true
 
   vars:
     neovim_build_dir: /tmp/neovim
+    lua_ls_install_dir: /usr/local/lua-language-server
 
     build_deps_fedora:
       - cmake
@@ -33,6 +34,14 @@
     runtime_deps_debian:
       - ripgrep
       - fzf
+
+    lsp_deps_fedora:
+      - clang-tools-extra
+      - python3-pip
+
+    lsp_deps_debian:
+      - clangd
+      - python3-pip
 
   tasks:
     - name: Install build dependencies (Fedora)
@@ -97,3 +106,54 @@
       file:
         path: "{{ neovim_build_dir }}"
         state: absent
+
+    # LSP servers used by neovim-minimal/init.lua: lua_ls, clangd, pyright
+    - name: Install clangd and pip (Fedora)
+      dnf:
+        name: "{{ lsp_deps_fedora }}"
+        state: present
+      when: ansible_facts["os_family"] == "RedHat"
+
+    - name: Install clangd and pip (Debian/Ubuntu)
+      apt:
+        name: "{{ lsp_deps_debian }}"
+        state: present
+      when: ansible_facts["os_family"] == "Debian"
+
+    - name: Install pyright via pip
+      pip:
+        name: pyright
+        executable: pip3
+        extra_args: --break-system-packages
+
+    - name: Fetch latest lua-language-server release
+      uri:
+        url: https://api.github.com/repos/LuaLS/lua-language-server/releases/latest
+        return_content: true
+      register: lua_ls_release
+
+    - name: Set lua-language-server version fact
+      set_fact:
+        lua_ls_version: "{{ lua_ls_release.json.tag_name }}"
+
+    - name: Print lua-language-server version
+      debug:
+        msg: "Installing lua-language-server {{ lua_ls_version }}"
+
+    - name: Create lua-language-server install directory
+      file:
+        path: "{{ lua_ls_install_dir }}"
+        state: directory
+        mode: "0755"
+
+    - name: Download and extract lua-language-server
+      unarchive:
+        src: "https://github.com/LuaLS/lua-language-server/releases/download/{{ lua_ls_version }}/lua-language-server-{{ lua_ls_version }}-linux-x64.tar.gz"
+        dest: "{{ lua_ls_install_dir }}"
+        remote_src: true
+
+    - name: Symlink lua-language-server into PATH
+      file:
+        src: "{{ lua_ls_install_dir }}/bin/lua-language-server"
+        dest: /usr/local/bin/lua-language-server
+        state: link

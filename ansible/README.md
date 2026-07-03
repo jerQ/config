@@ -9,8 +9,7 @@ Playbooks for system provisioning.
 | `main.yml` | Run all playbooks in order |
 | `update.yml` | Update all packages (Debian/Ubuntu via `apt`, Fedora via `dnf`) |
 | `packages.yml` | Install common packages and third-party repos (VS Code, Brave) |
-| `neovim.yml` | Build and install latest Neovim from source |
-| `lua-language-server.yml` | Install latest lua-language-server release from GitHub |
+| `neovim.yml` | Build latest Neovim from source and install its LSP servers (`lua_ls`, `clangd`, `pyright`) |
 | `setup.yml` | Create `~/Devel`, clone config repo, and run `install.sh` |
 
 ## Usage
@@ -27,7 +26,6 @@ Or run individually:
 ansible-playbook -i inventory.ini update.yml
 ansible-playbook -i inventory.ini packages.yml
 ansible-playbook -i inventory.ini neovim.yml
-ansible-playbook -i inventory.ini lua-language-server.yml
 ansible-playbook -i inventory.ini setup.yml
 ```
 
@@ -44,3 +42,9 @@ Installs the following:
 ## neovim.yml
 
 Fetches the latest stable release tag from GitHub, clones the source, and compiles with `RelWithDebInfo`. Installs to `/usr/local`. Also installs `ripgrep` and `fzf` as runtime dependencies.
+
+Then installs the LSP servers used by `neovim-minimal/init.lua`:
+
+- `clangd` — `clang-tools-extra` (Fedora) / `clangd` (Debian/Ubuntu) via the system package manager
+- `pyright` — via `pip3 install`
+- `lua_ls` — latest `lua-language-server` release binary from GitHub, extracted to `/usr/local/lua-language-server` and symlinked into `/usr/local/bin`
