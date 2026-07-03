@@ -44,7 +44,7 @@ Safe to re-run — skips targets that are already correctly symlinked. Initializ
 
 Single-file config (`neovim-minimal/init.lua`) using Neovim's native `vim.pack` (Neovim 0.11+). No lazy.nvim or packer.
 
-Plugins: catppuccin, oil.nvim, mini.pick.
+Plugins: catppuccin, oil.nvim, mini.pick, vim-tmux-navigator.
 LSP servers: `lua_ls`, `clangd`, `pyright` (must be installed separately).
 
 Leader: `<Space>`. Key mappings: `<leader>f` file picker, `<leader>e` oil, `<leader>lf` LSP format, `<leader>y/d` clipboard yank/delete, `<leader>pc` remove unused plugins.
