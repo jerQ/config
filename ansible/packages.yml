@@ -66,14 +66,14 @@
       dnf:
         name: "{{ packages_fedora }}"
         state: present
-      when: ansible_os_family == "RedHat"
+      when: ansible_facts["os_family"] == "RedHat"
 
     - name: Install packages (Debian/Ubuntu)
       apt:
         name: "{{ packages_debian }}"
         state: present
         update_cache: true
-      when: ansible_os_family == "Debian"
+      when: ansible_facts["os_family"] == "Debian"
 
     # VS Code — requires Microsoft repo
     - name: Add VS Code repo (Fedora)
@@ -84,13 +84,13 @@
         gpgkey: https://packages.microsoft.com/keys/microsoft.asc
         gpgcheck: true
         enabled: true
-      when: ansible_os_family == "RedHat"
+      when: ansible_facts["os_family"] == "RedHat"
 
     - name: Install VS Code (Fedora)
       dnf:
         name: code
         state: present
-      when: ansible_os_family == "RedHat"
+      when: ansible_facts["os_family"] == "RedHat"
 
     # Brave Browser — requires Brave repo
     - name: Add Brave repo (Fedora)
@@ -101,10 +101,10 @@
         gpgkey: https://brave-browser-rpm-release.s3.brave.com/brave-core.asc
         gpgcheck: true
         enabled: true
-      when: ansible_os_family == "RedHat"
+      when: ansible_facts["os_family"] == "RedHat"
 
     - name: Install Brave Browser (Fedora)
       dnf:
         name: brave-browser
         state: present
-      when: ansible_os_family == "RedHat"
+      when: ansible_facts["os_family"] == "RedHat"
