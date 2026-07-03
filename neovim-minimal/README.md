@@ -15,7 +15,7 @@ Requires Neovim 0.11+ (uses native `vim.pack` — no lazy.nvim or packer).
 - `catppuccin/nvim` — colorscheme
 - `stevearc/oil.nvim` — file explorer
 - `echasnovski/mini.pick` — fuzzy picker
-- `neovim/nvim-lspconfig` — LSP configurations
+- `christoomey/vim-tmux-navigator` — seamless vim/tmux pane navigation
 
 Install plugins by running `:packadd` or letting `vim.pack.add` fetch them on first launch.  
 Remove unused plugins with `<leader>pc`.
@@ -42,3 +42,8 @@ Leader key: `<Space>`
 | `<leader>y` | Yank to system clipboard |
 | `<leader>d` | Delete to system clipboard |
 | `<leader>pc` | Remove unused plugins |
+| `<leader>rn` | Rename symbol |
+| `<leader>D` | Show diagnostic float |
+| `]d` / `[d` | Next / prev diagnostic |
+| `gd` | Go to definition |
+| `K` | Hover documentation |
