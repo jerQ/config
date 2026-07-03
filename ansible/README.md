@@ -17,16 +17,16 @@ Playbooks for system provisioning.
 Run all playbooks:
 
 ```sh
-ansible-playbook main.yml -i localhost,
+ansible-playbook -i inventory.ini main.yml
 ```
 
 Or run individually:
 
 ```sh
-ansible-playbook update.yml -i localhost,
-ansible-playbook packages.yml -i localhost,
-ansible-playbook neovim.yml -i localhost,
-ansible-playbook setup.yml -i localhost,
+ansible-playbook -i inventory.ini update.yml
+ansible-playbook -i inventory.ini packages.yml
+ansible-playbook -i inventory.ini neovim.yml
+ansible-playbook -i inventory.ini setup.yml
 ```
 
 ## packages.yml
