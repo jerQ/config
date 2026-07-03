@@ -46,4 +46,6 @@ Leader key: `<Space>`
 | `<leader>D` | Show diagnostic float |
 | `]d` / `[d` | Next / prev diagnostic |
 | `gd` | Go to definition |
+| `gr` | Go to references |
+| `<leader>ca` | Code action |
 | `K` | Hover documentation |

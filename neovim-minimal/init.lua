@@ -9,6 +9,7 @@ vim.o.expandtab = true
 vim.o.swapfile = false
 vim.o.scl = "yes"
 vim.o.ignorecase = true
+vim.o.smartcase = true
 vim.o.winborder = "rounded"
 vim.o.colorcolumn = "80"
 vim.o.termguicolors = true
@@ -22,6 +23,7 @@ vim.pack.add({
 })
 
 -- Require
+require("catppuccin").setup({ flavour = "frappe" })
 require("mini.pick").setup()
 require("oil").setup()
 
@@ -60,24 +62,8 @@ vim.keymap.set('n', '<leader>rn', vim.lsp.buf.rename, { desc = "Rename Symbol" }
 vim.keymap.set('n', ']d', vim.diagnostic.goto_next, { desc = "Next Diagnostic" })
 vim.keymap.set('n', '[d', vim.diagnostic.goto_prev, { desc = "Prev Diagnostic" })
 vim.keymap.set('n', '<leader>D', vim.diagnostic.open_float, { desc = "Show Diagnostic" })
-
--- LSP (ORIG)
--- vim.lsp.enable({ "lua_ls", "clangd", "pyright" })
-
--- LSP Autocmd
--- vim.api.nvim_create_autocmd('LspAttach', {
--- 	group = vim.api.nvim_create_augroup('my.lsp', {}),
--- 	callback = function(args)
--- 		local client = assert(vim.lsp.get_client_by_id(args.data.client_id))
--- 		if client:supports_method('textDocument/completion') then
--- 			-- Optional: trigger autocompletion on EVERY keypress. May be slow!
--- 			local chars = {}; for i = 32, 126 do table.insert(chars, string.char(i)) end
--- 			client.server_capabilities.completionProvider.triggerCharacters = chars
--- 			vim.lsp.completion.enable(true, client.id, args.buf, { autotrigger = true })
--- 		end
--- 	end,
---}-- )
--- 
+vim.keymap.set('n', 'gr', vim.lsp.buf.references, { desc = "Go to References" })
+vim.keymap.set('n', '<leader>ca', vim.lsp.buf.code_action, { desc = "Code Action" })
 
 -- COLORSCHEME
 vim.cmd("colorscheme catppuccin")
