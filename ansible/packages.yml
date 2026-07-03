@@ -29,6 +29,7 @@
       - doctl
       - keepassxc
       - neovim
+      - lua-language-server
 
     packages_debian:
       - git
@@ -54,6 +55,7 @@
       - doctl
       - keepassxc
       - neovim
+      - lua-language-server
 
   tasks:
     - name: Install packages (Fedora)
