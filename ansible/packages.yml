@@ -9,6 +9,7 @@
       - gh
       - curl
       - fzf
+      - fd-find
       - zoxide
       - ripgrep
       - tree
@@ -32,6 +33,7 @@
       - git
       - curl
       - fzf
+      - fd-find
       - zoxide
       - ripgrep
       - tree
