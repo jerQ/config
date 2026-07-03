@@ -26,6 +26,7 @@
       - python3
       - ansible
       - podman
+      - doctl
       - keepassxc
       - neovim
 
@@ -50,6 +51,7 @@
       - python3
       - ansible
       - podman
+      - doctl
       - keepassxc
       - neovim
 

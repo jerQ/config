@@ -14,6 +14,9 @@ Deploy: `install.sh` symlinks `aliases/aliases` to `~/.aliases` and adds `source
 | `gr` | `grep -r` — recursive |
 | `gri` | `grep -ri` — recursive + case-insensitive |
 | `ff` | fzf file picker with `cat -n` line-number preview (`fzf --preview 'cat -n {}'`) |
+| `cat` | `bat` — syntax-highlighted pager |
+| `prs` | `gh pr list` — list open PRs |
+| `prc` | `gh pr create` — create a PR |
 | `open` | `xdg-open` wrapper (background, suppressed output) |
 | `fixscreens` | Disable laptop screen, use only HDMI-A-0 |
 | `caps2esc` / `caps2ctrl` | Remap Caps Lock via xkbmap |

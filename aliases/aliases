@@ -45,6 +45,13 @@ alias ..='cd ..'
 alias ...='cd ../..'
 alias ....='cd ../../..'
 
+# BAT
+alias cat='bat'
+
+# GH
+alias prs='gh pr list'
+alias prc='gh pr create'
+
 # CAPS2ESC
 alias caps2esc='setxkbmap -option caps:escape'
 alias caps2ctrl='setxkbmap -option ctrl:nocaps'
