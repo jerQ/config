@@ -46,7 +46,7 @@ alias ...='cd ../..'
 alias ....='cd ../../..'
 
 # BAT
-alias cat='bat'
+#alias cat='bat'
 
 # ZOXIDE
 alias cd='z'
