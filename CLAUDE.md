@@ -23,6 +23,10 @@ Personal dotfiles and system configuration. No build system, no tests, no linter
 
 Each subdirectory has its own README with full details.
 
+## Git workflow
+
+This repo pushes directly to `main` — no feature branches, no PRs. Commit and push straight to `main`.
+
 ## Install
 
 ```sh
