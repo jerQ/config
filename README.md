@@ -34,6 +34,12 @@ Bash aliases and shell functions. See [aliases/README.md](aliases/README.md).
 
 ---
 
+## opencode
+
+OpenCode configuration. See [opencode/README.md](opencode/README.md).
+
+---
+
 ## ansible
 
 Playbooks for system provisioning. See [ansible/README.md](ansible/README.md).

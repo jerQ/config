@@ -89,7 +89,7 @@ else
 fi
 
 echo "==> opencode"
-link "$REPO/opencode.json" "$HOME/.config/opencode/opencode.json"
+link "$REPO/opencode/opencode.json" "$HOME/.config/opencode/opencode.json"
 
 echo "==> submodules"
 git -C "$REPO" submodule update --init --recursive
