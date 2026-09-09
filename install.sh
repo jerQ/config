@@ -88,6 +88,9 @@ else
     echo "  env already sourced in ~/.zshrc"
 fi
 
+echo "==> opencode"
+link "$REPO/opencode.json" "$HOME/.config/opencode/opencode.json"
+
 echo "==> submodules"
 git -C "$REPO" submodule update --init --recursive
 

@@ -1,0 +1,25 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "provider": {
+    "ollama": {
+      "npm": "@ai-sdk/openai-compatible",
+      "name": "Local Ollama Windows",
+      "options": {
+        "baseURL": "http://localhost:11434/v1"
+      },
+      "models": {
+        "gemma2:2b": {
+          "name": "Gemma 2 (2B)",
+          "tools": true
+        },
+        "qwen2.5-coder:1.5b": {
+          "name": "Qwen 2.5 Coder (1.5B)",
+          "tools": true
+        }
+      }
+    }
+  },
+  "model": "ollama/qwen2.5-coder:1.5b",
+  "small_model": "ollama/gemma2:2b"
+}
+

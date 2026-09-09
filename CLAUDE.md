@@ -17,6 +17,7 @@ Personal dotfiles and system configuration. No build system, no tests, no linter
 | `env/env.zsh` | PATH and environment variables for zsh | `~/.env.zsh`, sourced from `.zshrc` |
 | `tmux-config/` | Tmux configuration and plugins | `~/.config/tmux` (directory symlink) |
 | `neovim-minimal/` | Single-file Neovim config using native `vim.pack` | `~/.config/nvim` (directory symlink) |
+| `opencode.json` | OpenCode configuration | `~/.config/opencode/opencode.json` |
 | `ansible/` | Provisioning playbooks | — |
 | `install.sh` | Symlinks all configs to target locations | run from repo root |
 
