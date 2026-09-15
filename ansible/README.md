@@ -37,7 +37,7 @@ Installs the following:
 
 **GUI apps:** `keepassxc`
 
-Installed on both Fedora (via `dnf`) and Debian/Ubuntu (via `apt`); a few package names differ between the two (e.g. `gcc-c++`/`g++`, `golang`/`golang-go`).
+Installed on both Fedora (via `dnf`) and Debian/Ubuntu (via `apt`); a few package names differ between the two (e.g. `gcc-c++`/`g++`, `golang`/`golang-go`). `doctl` is Fedora-only — it isn't packaged in the standard Debian/Ubuntu apt repos, so it's left out of `packages_debian` and needs manual install there.
 
 ## neovim.yml
 

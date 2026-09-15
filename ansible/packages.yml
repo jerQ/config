@@ -52,7 +52,6 @@
       - python3
       - ansible
       - podman
-      - doctl
       - keepassxc
       - neovim
 
