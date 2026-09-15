@@ -85,6 +85,6 @@ Sets:
 Playbooks in `ansible/`:
 - `main.yml` — runs all playbooks in order (update → packages → neovim → setup)
 - `update.yml` — updates all packages on Debian/Ubuntu (`apt`) and Fedora (`dnf`)
-- `packages.yml` — installs common CLI tools (including neovim), GUI apps, and third-party repos (VS Code, Brave)
+- `packages.yml` — installs common CLI tools (including neovim) and GUI apps on Debian/Ubuntu (`apt`) and Fedora (`dnf`)
 - `neovim.yml` — fetches latest stable tag from GitHub, compiles, and installs Neovim to `/usr/local`
 - `setup.yml` — creates `~/Devel`, clones config repo, and runs `install.sh` (runs as current user, no sudo)

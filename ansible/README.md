@@ -8,7 +8,7 @@ Playbooks for system provisioning.
 |----------|-------------|
 | `main.yml` | Run all playbooks in order |
 | `update.yml` | Update all packages (Debian/Ubuntu via `apt`, Fedora via `dnf`) |
-| `packages.yml` | Install common packages and third-party repos (VS Code, Brave) |
+| `packages.yml` | Install common packages (Debian/Ubuntu via `apt`, Fedora via `dnf`) |
 | `neovim.yml` | Build latest Neovim from source and install its LSP servers (`lua_ls`, `clangd`, `pyright`) |
 | `setup.yml` | Create `~/Devel`, clone config repo, and run `install.sh` |
 
@@ -37,7 +37,7 @@ Installs the following:
 
 **GUI apps:** `keepassxc`
 
-**Third-party repos (Fedora only):** VS Code (Microsoft repo), Brave Browser (Brave repo)
+Installed on both Fedora (via `dnf`) and Debian/Ubuntu (via `apt`); a few package names differ between the two (e.g. `gcc-c++`/`g++`, `golang`/`golang-go`).
 
 ## neovim.yml
 
