@@ -18,6 +18,8 @@ Personal dotfiles and system configuration. No build system, no tests, no linter
 | `tmux-config/` | Tmux configuration and plugins | `~/.config/tmux` (directory symlink) |
 | `neovim-minimal/` | Single-file Neovim config using native `vim.pack` | `~/.config/nvim` (directory symlink) |
 | `opencode/opencode.json` | OpenCode configuration | `~/.config/opencode/opencode.json` |
+| `starship/starship.toml` | Starship prompt config | `~/.config/starship.toml` |
+| `zsh/` | Zsh plugins (autosuggestions, syntax-highlighting) | `~/.config/zsh` (directory symlink) |
 | `ansible/` | Provisioning playbooks | — |
 | `install.sh` | Symlinks all configs to target locations | run from repo root |
 
@@ -79,12 +81,27 @@ Sets:
 - `GOPATH="$HOME/go"` — Go workspace directory
 - `PATH` — appends `$GOPATH/bin`, `$HOME/.cargo/bin`, `$HOME/.local/bin`
 - Initializes `zoxide` (smart `cd`) via `eval "$(zoxide init <shell>)"` if installed
+- Initializes `starship` prompt via `eval "$(starship init <shell>)"` if installed
+
+## Starship
+
+File: `starship/starship.toml` → `~/.config/starship.toml`.
+
+Two-line prompt, plain-text symbols (no Nerd Font required): directory, git branch/status, language version (`c`, `golang`, `lua`, `python`, `rust` — shown only when relevant to the current directory), command duration (if >2s), then an exit-code-colored `❯` on its own line.
+
+Theme: Catppuccin Frappé, matching tmux, fzf, and neovim. Installed via `cargo install starship` (see `ansible/packages.yml`) since it isn't reliably packaged via `dnf`/`apt`.
+
+## Zsh Plugins
+
+Directory: `zsh/` → `~/.config/zsh` (directory symlink), loader `zsh-plugins.zsh` sourced from `~/.zshrc`.
+
+Plugins (git submodules under `zsh/plugins/`, sourced directly — no plugin manager): `zsh-users/zsh-autosuggestions`, `zsh-users/zsh-syntax-highlighting`. Sourcing order matters — `zsh-syntax-highlighting` must load last.
 
 ## Ansible
 
 Playbooks in `ansible/`:
 - `main.yml` — runs all playbooks in order (update → packages → neovim → setup)
 - `update.yml` — updates all packages on Debian/Ubuntu (`apt`) and Fedora (`dnf`)
-- `packages.yml` — installs common CLI tools (including neovim) and GUI apps on Debian/Ubuntu (`apt`) and Fedora (`dnf`)
+- `packages.yml` — installs common CLI tools (including neovim) and GUI apps on Debian/Ubuntu (`apt`) and Fedora (`dnf`), plus `starship` via `cargo install`
 - `neovim.yml` — fetches latest stable tag from GitHub, compiles, and installs Neovim to `/usr/local`
 - `setup.yml` — creates `~/Devel`, clones config repo, and runs `install.sh` (runs as current user, no sudo)

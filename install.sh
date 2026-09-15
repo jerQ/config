@@ -88,6 +88,20 @@ else
     echo "  env already sourced in ~/.zshrc"
 fi
 
+echo "==> starship"
+link "$REPO/starship/starship.toml" "$HOME/.config/starship.toml"
+
+echo "==> zsh plugins"
+link "$REPO/zsh" "$HOME/.config/zsh"
+
+if ! grep -qF '.config/zsh/zsh-plugins.zsh' "$HOME/.zshrc" 2>/dev/null; then
+    echo '' >> "$HOME/.zshrc"
+    echo '[ -f "$HOME/.config/zsh/zsh-plugins.zsh" ] && source "$HOME/.config/zsh/zsh-plugins.zsh"' >> "$HOME/.zshrc"
+    echo "  added zsh plugins source to ~/.zshrc"
+else
+    echo "  zsh plugins already sourced in ~/.zshrc"
+fi
+
 echo "==> opencode"
 link "$REPO/opencode/opencode.json" "$HOME/.config/opencode/opencode.json"
 
