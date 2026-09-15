@@ -89,7 +89,7 @@ File: `starship/starship.toml` → `~/.config/starship.toml`.
 
 Two-line prompt, plain-text symbols (no Nerd Font required): directory, git branch/status, language version (`c`, `golang`, `lua`, `python`, `rust` — shown only when relevant to the current directory), command duration (if >2s), then an exit-code-colored `❯` on its own line.
 
-Theme: Catppuccin Frappé, matching tmux, fzf, and neovim. Installed via `cargo install starship` (see `ansible/packages.yml`) since it isn't reliably packaged via `dnf`/`apt`.
+Theme: Catppuccin Frappé, matching tmux, fzf, and neovim. Installed via the official install script into `~/.local/bin` (see `ansible/packages.yml`) since it isn't reliably packaged via `dnf`/`apt` and a `cargo install` compile is too slow/heavy on low-power devices (e.g. Raspberry Pi).
 
 ## Zsh Plugins
 
@@ -102,6 +102,6 @@ Plugins (git submodules under `zsh/plugins/`, sourced directly — no plugin man
 Playbooks in `ansible/`:
 - `main.yml` — runs all playbooks in order (update → packages → neovim → setup)
 - `update.yml` — updates all packages on Debian/Ubuntu (`apt`) and Fedora (`dnf`)
-- `packages.yml` — installs common CLI tools (including neovim) and GUI apps on Debian/Ubuntu (`apt`) and Fedora (`dnf`), plus `starship` via `cargo install`
+- `packages.yml` — installs common CLI tools (including neovim) and GUI apps on Debian/Ubuntu (`apt`) and Fedora (`dnf`), plus `starship` via its official install script
 - `neovim.yml` — fetches latest stable tag from GitHub, compiles, and installs Neovim to `/usr/local`
 - `setup.yml` — creates `~/Devel`, clones config repo, and runs `install.sh` (runs as current user, no sudo)

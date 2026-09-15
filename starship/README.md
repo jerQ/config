@@ -2,7 +2,7 @@
 
 Deploy: `install.sh` symlinks `starship.toml` → `~/.config/starship.toml`.
 
-Requires [`starship`](https://starship.rs) installed. Not reliably available via `dnf`/`apt` (Fedora: Copr-only; Debian/Ubuntu: only very recent releases), so it's installed via `cargo install starship` (see `ansible/packages.yml`) — `cargo` is already provisioned there. Initialized via `eval "$(starship init bash)"` / `eval "$(starship init zsh)"` in `env/env.bash` / `env/env.zsh`, guarded by `command -v starship`.
+Requires [`starship`](https://starship.rs) installed. Not reliably available via `dnf`/`apt` (Fedora: Copr-only; Debian/Ubuntu: only very recent releases), so it's installed via the official install script into `~/.local/bin` (see `ansible/packages.yml`) rather than `cargo install` — compiling from source is too slow/heavy on low-power devices like a Raspberry Pi. Initialized via `eval "$(starship init bash)"` / `eval "$(starship init zsh)"` in `env/env.bash` / `env/env.zsh`, guarded by `command -v starship`.
 
 ## Prompt
 

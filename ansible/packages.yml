@@ -69,10 +69,9 @@
         update_cache: true
       when: ansible_facts["os_family"] == "Debian"
 
-    - name: Install starship via cargo
-      command:
-        cmd: cargo install starship --locked
+    - name: Install starship
+      shell: curl -sS https://starship.rs/install.sh | sh -s -- --yes --bin-dir "{{ ansible_env.HOME }}/.local/bin"
       args:
-        creates: "{{ ansible_env.HOME }}/.cargo/bin/starship"
+        creates: "{{ ansible_env.HOME }}/.local/bin/starship"
       become: false
 
