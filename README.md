@@ -34,6 +34,30 @@ Bash aliases and shell functions. See [aliases/README.md](aliases/README.md).
 
 ---
 
+## fzf
+
+fzf shell integration for bash and zsh. See [fzf/README.md](fzf/README.md).
+
+---
+
+## env
+
+PATH and environment variables for bash and zsh. See [env/README.md](env/README.md).
+
+---
+
+## starship
+
+Cross-shell prompt config, Catppuccin Frappé themed. See [starship/README.md](starship/README.md).
+
+---
+
+## zsh
+
+zsh-autosuggestions and zsh-syntax-highlighting plugins. See [zsh/README.md](zsh/README.md).
+
+---
+
 ## opencode
 
 OpenCode configuration. See [opencode/README.md](opencode/README.md).
