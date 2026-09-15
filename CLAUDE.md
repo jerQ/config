@@ -69,7 +69,7 @@ Key bindings (requires `fzf` installed via system package manager):
 - `Ctrl+T` — fzf file picker (pastes path into command line)
 - `Alt+C` — fzf directory picker (`cd` into selection)
 
-Theme: Catppuccin Frappé colors via `FZF_DEFAULT_OPTS`. System integration files sourced from `/usr/share/fzf/shell/` (Fedora package path).
+Theme: Catppuccin Frappé colors via `FZF_DEFAULT_OPTS`. Shell integration generated via `eval "$(fzf --bash)"` / `eval "$(fzf --zsh)"` (fzf 0.48+), distro-independent.
 
 ## Env
 

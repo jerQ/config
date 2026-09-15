@@ -4,5 +4,4 @@ export FZF_DEFAULT_OPTS=" \
 --color=marker:#babbf1,fg+:#c6d0f5,prompt:#ca9ee6,hl+:#e78284 \
 --height 40% --border --bind ctrl-u:page-up,ctrl-d:page-down"
 
-[ -f /usr/share/fzf/shell/key-bindings.zsh ] && source /usr/share/fzf/shell/key-bindings.zsh
-[ -f /usr/share/fzf/shell/completion.zsh ]   && source /usr/share/fzf/shell/completion.zsh
+command -v fzf &>/dev/null && eval "$(fzf --zsh)"
