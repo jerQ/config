@@ -5,5 +5,6 @@ Deploy: `install.sh` symlinks `env.bash` → `~/.env.bash`, `env.zsh` → `~/.en
 Sets:
 - `GOPATH="$HOME/go"` — Go workspace directory
 - `PATH` — appends `$GOPATH/bin`, `$HOME/.cargo/bin`, `$HOME/.local/bin`
+- Persistent, shared shell history (`HISTFILE`, `HISTSIZE`, dedup, live append/share across sessions)
 - Initializes `zoxide` (smart `cd`) via `eval "$(zoxide init <shell>)"` if installed
 - Initializes `starship` prompt via `eval "$(starship init <shell>)"` if installed
