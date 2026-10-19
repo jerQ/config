@@ -64,3 +64,6 @@ alias prc='gh pr create'
 # CAPS2ESC
 alias caps2esc='setxkbmap -option caps:escape'
 alias caps2ctrl='setxkbmap -option ctrl:nocaps'
+
+# ESPRESSIF
+alias esp='source "$HOME/.espressif/tools/activate_idf_v6.1.sh"'
