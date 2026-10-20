@@ -70,8 +70,8 @@
       when: ansible_facts["os_family"] == "Debian"
 
     - name: Install starship
-      shell: curl -sS https://starship.rs/install.sh | sh -s -- --yes --bin-dir "{{ ansible_env.HOME }}/.local/bin"
+      shell: curl -sS https://starship.rs/install.sh | sh -s -- --yes --bin-dir "$HOME/.local/bin"
       args:
-        creates: "{{ ansible_env.HOME }}/.local/bin/starship"
+        creates: "$HOME/.local/bin/starship"
       become: false
 
