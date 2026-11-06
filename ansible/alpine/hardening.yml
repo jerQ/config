@@ -14,7 +14,9 @@
     # LSMs to enable on the kernel command line. linux-lts builds AppArmor in,
     # but leaves it out of the default CONFIG_LSM.
     lsm_list: landlock,lockdown,yama,integrity,apparmor
-    kernel_cmdline_extra: "lsm={{ lsm_list }} audit=1"
+    # Kernel arguments to add. Each is added only when its name is missing
+    # from the command line, so existing values are never changed.
+    kernel_cmdline_args: ["lsm={{ lsm_list }}", audit=1, audit_backlog_limit=8192]
 
     # Make audit rules immutable (-e 2) until the next reboot.
     audit_immutable: false
@@ -136,33 +138,36 @@
             - /boot/cmdline.txt
           register: bootcfg
 
-        # Each regex only matches a line that doesn't contain "lsm=" yet,
+        # Each regex only matches a line that doesn't contain "<name>=" yet,
         # so re-runs don't touch it.
-        - name: Add LSM and audit to kernel cmdline (extlinux)
+        - name: Add LSM and audit options to kernel cmdline (extlinux)
           replace:
             path: /etc/update-extlinux.conf
-            regexp: '^(default_kernel_opts=")((?:(?!lsm=)[^"])*)"$'
-            replace: '\1\2 {{ kernel_cmdline_extra }}"'
+            regexp: '^(default_kernel_opts=")((?:(?!{{ item.split("=")[0] }}=)[^"])*)"$'
+            replace: '\1\2 {{ item }}"'
+          loop: "{{ kernel_cmdline_args }}"
           when: bootcfg.results[0].stat.exists
           register: cmdline_extlinux
           notify: Update extlinux
 
-        - name: Add LSM and audit to kernel cmdline (GRUB)
+        - name: Add LSM and audit options to kernel cmdline (GRUB)
           replace:
             path: /etc/default/grub
-            regexp: '^(GRUB_CMDLINE_LINUX_DEFAULT=")((?:(?!lsm=)[^"])*)"$'
-            replace: '\1\2 {{ kernel_cmdline_extra }}"'
+            regexp: '^(GRUB_CMDLINE_LINUX_DEFAULT=")((?:(?!{{ item.split("=")[0] }}=)[^"])*)"$'
+            replace: '\1\2 {{ item }}"'
+          loop: "{{ kernel_cmdline_args }}"
           when:
             - not bootcfg.results[0].stat.exists
             - bootcfg.results[1].stat.exists
           register: cmdline_grub
           notify: Update GRUB config
 
-        - name: Add LSM and audit to kernel cmdline (Raspberry Pi)
+        - name: Add LSM and audit options to kernel cmdline (Raspberry Pi)
           replace:
             path: /boot/cmdline.txt
-            regexp: '^((?:(?!lsm=).)+?)[ \t]*$'
-            replace: '\1 {{ kernel_cmdline_extra }}'
+            regexp: '^((?:(?!{{ item.split("=")[0] }}=).)+?)[ \t]*$'
+            replace: '\1 {{ item }}'
+          loop: "{{ kernel_cmdline_args }}"
           when:
             - not bootcfg.results[0].stat.exists
             - not bootcfg.results[1].stat.exists
@@ -171,7 +176,7 @@
 
         - name: Warn when no known bootloader config was found
           debug:
-            msg: "No extlinux/GRUB/cmdline.txt found. Add '{{ kernel_cmdline_extra }}' to the kernel command line manually."
+            msg: "No extlinux/GRUB/cmdline.txt found. Add '{{ kernel_cmdline_args | join(' ') }}' to the kernel command line manually."
           when: bootcfg.results | selectattr('stat.exists') | list | length == 0
 
         - name: Mark reboot as required

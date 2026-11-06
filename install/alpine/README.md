@@ -41,9 +41,29 @@ Override the sizes from the environment, e.g. `HOME_SIZE=50G VAR_SIZE=20G sh cis
 
 On BIOS machines the disk also gets a 1M BIOS boot partition, which GRUB needs on GPT. `/boot` is never encrypted, so GRUB doesn't need LUKS support.
 
-The answer file also sets the installed system's kernel command line: `lsm=…,apparmor audit=1 audit_backlog_limit=8192`.
+## Answer file
 
-`setup-alpine` has no locale step, so the answer file has an extra `LOCALEOPTS` (default `fi_FI.UTF-8`, `none` to skip). After the install, `cis-install.sh` installs `musl-locales` and writes `export LANG=…` to `/etc/profile.d/20locale.sh`. musl's locale support is limited: it mostly translates messages, while collation and number formats stay as in `C`.
+`answers.example.conf` has these defaults. Only the placeholders must be filled in:
+
+| Setting | Default |
+|---------|---------|
+| `KEYMAPOPTS` | `fi fi-winkeys` (Finnish, with Windows keys) |
+| `HOSTNAMEOPTS` | `<HOSTNAME>` |
+| `INTERFACESOPTS` | `lo` + `eth0` with DHCP (DNS from DHCP) |
+| `TIMEZONEOPTS` | `Europe/Helsinki` |
+| `LOCALEOPTS` | `fi_FI.UTF-8` (see below) |
+| `APKREPOSOPTS` | First mirror, community repository enabled |
+| `USEROPTS` | `<USERNAME>`, admin (wheel + doas), groups `audio,input,video,netdev` |
+| `USERSSHKEY` | `<SSH_PUBLIC_KEY_OR_URL>`, e.g. `https://github.com/<GITHUB_USER>.keys` |
+| `SSHDOPTS` / `NTPOPTS` | `openssh` (no root SSH key) / `chrony` |
+| `DISKOPTS` | `-m sys /mnt`: install onto the tree `cis-install.sh` mounted. Don't change. |
+| `KERNELOPTS` | `quiet lsm=…,apparmor audit=1 audit_backlog_limit=8192` (exported, so `setup-disk` sees it) |
+
+There are no passwords in the file. `setup-alpine` asks for the root password, and `cis-install.sh` asks for the user's password at the end.
+
+`setup-alpine` has no locale step, so `LOCALEOPTS` is an extra setting for `cis-install.sh` (`none` skips it). After the install, the script installs `musl-locales` and writes `export LANG=…` to `/etc/profile.d/20locale.sh`. musl's locale support is limited: it mostly translates messages, while collation and number formats stay as in `C`.
+
+`cis-install.sh` also installs `python3`, which Ansible needs on the target.
 
 ## Usage
 
@@ -76,6 +96,28 @@ The answer file also sets the installed system's kernel command line: `lsm=…,a
    ```sh
    ansible-playbook -i inventory.ini alpine/site.yml -e hardening=true
    ```
+
+## Tested on
+
+Alpine 3.24 (`alpine-virt` ISO, which pulls the missing disk tools from a mirror) in QEMU, x86_64:
+
+- UEFI (OVMF) with `--encrypt`, and BIOS without
+- After reboot: every mount has its CIS options and `noexec` is enforced, AppArmor is in the LSM list, `audit=1` is set, swap is on, `doas` works for the user, keymap, time zone and locale are set, and `alpine/hardening.yml` runs without manual steps
+
+## Testing in a VM
+
+```sh
+qemu-img create -f qcow2 disk.qcow2 32G
+cp /usr/share/edk2/ovmf/OVMF_VARS.fd vars.fd      # UEFI only
+qemu-system-x86_64 -enable-kvm -m 1536 -smp 2 -nographic \
+  -drive file=disk.qcow2,if=virtio,format=qcow2 \
+  -netdev user,id=n0,hostfwd=tcp:127.0.0.1:2222-:22 -device virtio-net-pci,netdev=n0 \
+  -drive if=pflash,format=raw,readonly=on,file=/usr/share/edk2/ovmf/OVMF_CODE.fd \
+  -drive if=pflash,format=raw,file=vars.fd \
+  -cdrom alpine-virt-<VERSION>-x86_64.iso -boot d
+```
+
+Leave out the two `pflash` lines to test BIOS. Serve `cis-install.sh` and a test `answers.conf` with `python3 -m http.server`; inside the VM the host is `10.0.2.2`. Install to `/dev/vda`, power off, and boot again without `-cdrom` (`-boot c`). SSH is then on `localhost:2222`.
 
 ## Not covered
 
