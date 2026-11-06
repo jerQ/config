@@ -11,12 +11,12 @@ Playbooks for system provisioning, split per OS. Pick the directory that matches
 
 | Playbook | Description |
 |----------|-------------|
-| `<os>/site.yml` | Run everything in order: update → packages → gui → neovim → starship → setup |
+| `<os>/site.yml` | Run everything in order: update → packages → gui → neovim → starship → setup, then hardening if `-e hardening=true` is passed |
 | `<os>/update.yml` | Upgrade all packages |
 | `<os>/packages.yml` | Install common CLI tools |
 | `<os>/gui.yml` | Install GUI apps (`keepassxc`) — skip on headless machines |
 | `<os>/neovim.yml` | Install Neovim, `ripgrep`, `fzf`, `clangd` and `pip` from the distro repos, then run `common/lsp.yml` |
-| `<os>/hardening.yml` | Optional security hardening (MAC, auditd, sysctl, firewall, SSH, fail2ban, auto-updates). Not part of `site.yml`. See [Hardening](#hardening) |
+| `<os>/hardening.yml` | Optional security hardening (MAC, auditd, sysctl, firewall, SSH, fail2ban, auto-updates). Skipped in `site.yml` unless `-e hardening=true` is passed. See [Hardening](#hardening) |
 | `common/lsp.yml` | Install `pyright` (pip) and `lua-language-server` (GitHub release, x86_64 or aarch64) |
 | `common/starship.yml` | Install `starship` into `~/.local/bin` via the official script (no sudo) |
 | `common/setup.yml` | Create `~/Devel`, clone config repo, and run `install.sh` (no sudo) |
@@ -29,6 +29,7 @@ Run everything:
 ansible-playbook -i inventory.ini fedora/site.yml
 ansible-playbook -i inventory.ini debian/site.yml
 ansible-playbook -i inventory.ini alpine/site.yml
+ansible-playbook -i inventory.ini debian/site.yml -e hardening=true   # also run hardening.yml
 ```
 
 Or pick only what you need (several playbooks can be passed at once):
@@ -62,7 +63,7 @@ Neovim comes from the distro repos (current Fedora and Debian/Ubuntu releases sh
 
 ## Hardening
 
-`<os>/hardening.yml` is optional and run on demand. `site.yml` doesn't import it. Each section is tagged, so you can apply only some of them:
+`<os>/hardening.yml` is optional. Run it on its own, or as part of `site.yml` with `-e hardening=true`; without that flag `site.yml` skips it. Each section is tagged, so you can apply only some of them:
 
 ```sh
 ansible-playbook -i inventory.ini debian/hardening.yml --check --diff     # dry run first
