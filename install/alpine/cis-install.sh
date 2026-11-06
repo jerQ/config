@@ -87,8 +87,17 @@ command -v setup-alpine >/dev/null || die "setup-alpine not found: run this from
 if grep -q "^$disk" /proc/mounts; then die "$disk (or a partition on it) is mounted"; fi
 if grep -q " $MNT " /proc/mounts; then die "$MNT is already mounted"; fi
 case "$answers" in
-    http://*|https://*) ;;
+    http://*|https://*)
+        # Fetch once, so this script can read LOCALEOPTS from it too
+        wget -q -O /tmp/answers.conf "$answers" || die "could not download $answers"
+        answers=/tmp/answers.conf ;;
     *) [ -f "$answers" ] || die "answer file $answers not found" ;;
+esac
+# setup-alpine has no locale step: LOCALEOPTS is applied after the install
+locale=$(sed -n 's/^LOCALEOPTS="\{0,1\}\([^"]*\)"\{0,1\}[[:space:]]*$/\1/p' "$answers" | tail -n 1)
+case "$locale" in
+    ''|none) locale= ;;
+    *[!A-Za-z0-9_.@-]*) die "invalid LOCALEOPTS: $locale" ;;
 esac
 
 if [ -d /sys/firmware/efi ]; then firmware=uefi; else firmware=bios; fi
@@ -231,6 +240,16 @@ cat "$fstab"
 mount --bind /dev "$MNT/dev"
 # setup-disk only enables swap when it created the swap itself
 chroot "$MNT" rc-update add swap boot >/dev/null
+
+# musl has no locale data of its own: musl-locales provides it, and
+# /etc/profile.d sets LANG for login shells
+if [ -n "$locale" ]; then
+    info "Setting locale $locale"
+    apk add --quiet --root "$MNT" musl-locales || die "could not install musl-locales"
+    [ -f "$MNT/usr/share/i18n/locales/musl/$locale" ] ||
+        echo "WARNING: musl-locales has no $locale, setting LANG anyway" >&2
+    printf 'export LANG=%s\n' "$locale" > "$MNT/etc/profile.d/20locale.sh"
+fi
 
 # setup-user is non-interactive when the answer file names the user, so no
 # password gets set. The user needs one for console login and doas.

@@ -43,6 +43,8 @@ On BIOS machines the disk also gets a 1M BIOS boot partition, which GRUB needs o
 
 The answer file also sets the installed system's kernel command line: `lsm=…,apparmor audit=1 audit_backlog_limit=8192`.
 
+`setup-alpine` has no locale step, so the answer file has an extra `LOCALEOPTS` (default `fi_FI.UTF-8`, `none` to skip). After the install, `cis-install.sh` installs `musl-locales` and writes `export LANG=…` to `/etc/profile.d/20locale.sh`. musl's locale support is limited: it mostly translates messages, while collation and number formats stay as in `C`.
+
 ## Usage
 
 1. Copy the template and fill in the placeholders:
