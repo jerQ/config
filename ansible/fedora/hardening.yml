@@ -1,0 +1,375 @@
+---
+# Optional security hardening for Fedora. Not part of site.yml — run on demand.
+# Every section is tagged, so you can pick only what you need:
+#   ansible-playbook -i inventory.ini fedora/hardening.yml --tags sysctl,firewall
+# Tags: selinux, audit, sysctl, modules, mounts, firewall, ssh, fail2ban, autoupdate
+# Try it first with --check --diff. Keep a second SSH session open while
+# applying the ssh/firewall tags. A reboot is needed for audit=1, and when
+# SELinux was disabled before.
+- name: Harden Fedora
+  hosts: all
+  become: true
+
+  vars:
+    # Make audit rules immutable (-e 2) until the next reboot.
+    audit_immutable: false
+
+    blacklisted_modules: [dccp, sctp, rds, tipc, cramfs, freevxfs, jffs2, hfs, hfsplus]
+
+    # firewalld zone to use as default. FedoraWorkstation opens ports
+    # 1025-65535 to the network; public only allows ssh, mdns, dhcpv6-client.
+    firewall_zone: public
+    # Extra inbound TCP ports to open in that zone. Keep your SSH port here!
+    firewall_allowed_tcp: [22]
+
+    fail2ban_bantime: 1h
+    fail2ban_findtime: 10m
+    fail2ban_maxretry: 5
+
+    # dnf5-automatic: "security" for security updates only, "default" for all.
+    autoupdate_type: security
+
+    audit_arch: "b{{ ansible_facts['userspace_bits'] | default('64') }}"
+    reboot_required: false
+
+  tasks:
+    # ------------------------------------------------------------------- selinux
+    # Fedora's MAC is SELinux (not AppArmor). It's enforcing by default; this
+    # makes sure nobody has turned it off.
+    - name: SELinux
+      tags: [selinux]
+      block:
+        - name: Install SELinux tools
+          dnf:
+            name: [policycoreutils, policycoreutils-python-utils, python3-libselinux]
+            state: present
+
+        - name: Set SELinux to enforcing (targeted policy)
+          ansible.posix.selinux:
+            policy: targeted
+            state: enforcing
+          register: selinux_result
+
+        - name: Mark reboot as required (SELinux was disabled)
+          set_fact:
+            reboot_required: true
+          when: selinux_result.reboot_required | default(false)
+
+    # --------------------------------------------------------------------- audit
+    - name: Audit
+      tags: [audit]
+      block:
+        - name: Install audit
+          dnf:
+            name: [audit, audit-rules]
+            state: present
+
+        # Fedora installs 10-no-audit.rules (-a task,never) as audit.rules,
+        # which turns off all syscall auditing. Replace it with the base config.
+        - name: Replace Fedora's no-audit default rules with the base config
+          copy:
+            src: /usr/share/audit-rules/10-base-config.rules
+            dest: /etc/audit/rules.d/audit.rules
+            remote_src: true
+            mode: "0640"
+          notify: Load audit rules
+
+        - name: Write audit rules
+          copy:
+            dest: /etc/audit/rules.d/50-hardening.rules
+            mode: "0640"
+            content: |
+              # Managed by ansible (fedora/hardening.yml)
+              # Identity and privilege
+              -w /etc/passwd -p wa -k identity
+              -w /etc/shadow -p wa -k identity
+              -w /etc/group -p wa -k identity
+              -w /etc/gshadow -p wa -k identity
+              -w /etc/sudoers -p wa -k privilege
+              -w /etc/sudoers.d/ -p wa -k privilege
+              # SSH config
+              -w /etc/ssh/sshd_config -p wa -k sshd
+              -w /etc/ssh/sshd_config.d/ -p wa -k sshd
+              # Package sources and scheduled jobs
+              -w /etc/yum.repos.d/ -p wa -k dnf
+              -w /etc/crontab -p wa -k cron
+              -w /etc/cron.d/ -p wa -k cron
+              # SELinux config
+              -w /etc/selinux/ -p wa -k selinux
+              # Kernel modules
+              -a always,exit -F arch={{ audit_arch }} -S init_module,finit_module,delete_module -k modules
+              # Time changes
+              -a always,exit -F arch={{ audit_arch }} -S adjtimex,settimeofday,clock_settime -k time
+              # Mounts and hostname
+              -a always,exit -F arch={{ audit_arch }} -S mount -k mount
+              -a always,exit -F arch={{ audit_arch }} -S sethostname -k hostname
+              {% if audit_immutable %}
+              # Lock rules until reboot
+              -e 2
+              {% endif %}
+          notify: Load audit rules
+
+        - name: Enable and start auditd
+          service:
+            name: auditd
+            enabled: true
+            state: started
+
+        # audit=1 lets processes started before auditd be audited too.
+        - name: Read default kernel cmdline
+          command: grubby --info=DEFAULT
+          register: grubby_info
+          changed_when: false
+          check_mode: false
+
+        - name: Add audit=1 to all kernels
+          command: grubby --update-kernel=ALL --args=audit=1
+          when: "'audit=1' not in grubby_info.stdout"
+          register: grubby_update
+
+        - name: Mark reboot as required (kernel cmdline changed)
+          set_fact:
+            reboot_required: true
+          when: grubby_update is changed
+
+    # -------------------------------------------------------------------- sysctl
+    - name: Write sysctl hardening
+      tags: [sysctl]
+      copy:
+        dest: /etc/sysctl.d/90-hardening.conf
+        mode: "0644"
+        content: |
+          # Managed by ansible (fedora/hardening.yml)
+          # User namespaces stay enabled: rootless podman needs them.
+          kernel.kptr_restrict = 2
+          kernel.dmesg_restrict = 1
+          kernel.unprivileged_bpf_disabled = 1
+          net.core.bpf_jit_harden = 2
+          kernel.yama.ptrace_scope = 1
+          kernel.kexec_load_disabled = 1
+          fs.protected_hardlinks = 1
+          fs.protected_symlinks = 1
+          fs.protected_fifos = 2
+          fs.protected_regular = 2
+          fs.suid_dumpable = 0
+
+          net.ipv4.conf.all.rp_filter = 1
+          net.ipv4.conf.default.rp_filter = 1
+          net.ipv4.conf.all.accept_redirects = 0
+          net.ipv4.conf.default.accept_redirects = 0
+          net.ipv4.conf.all.secure_redirects = 0
+          net.ipv4.conf.default.secure_redirects = 0
+          net.ipv4.conf.all.send_redirects = 0
+          net.ipv4.conf.default.send_redirects = 0
+          net.ipv4.conf.all.accept_source_route = 0
+          net.ipv4.conf.default.accept_source_route = 0
+          net.ipv4.conf.all.log_martians = 1
+          net.ipv4.conf.default.log_martians = 1
+          net.ipv4.tcp_syncookies = 1
+          net.ipv4.icmp_echo_ignore_broadcasts = 1
+
+          net.ipv6.conf.all.accept_redirects = 0
+          net.ipv6.conf.default.accept_redirects = 0
+          net.ipv6.conf.all.accept_source_route = 0
+          net.ipv6.conf.default.accept_source_route = 0
+      notify: Reload sysctl
+
+    # ------------------------------------------------------------------- modules
+    - name: Block unused kernel modules
+      tags: [modules]
+      copy:
+        dest: /etc/modprobe.d/hardening.conf
+        mode: "0644"
+        content: |
+          # Managed by ansible (fedora/hardening.yml)
+          {% for mod in blacklisted_modules %}
+          install {{ mod }} /bin/false
+          {% endfor %}
+
+    # -------------------------------------------------------------------- mounts
+    - name: Mount /dev/shm with nosuid,nodev,noexec
+      tags: [mounts]
+      lineinfile:
+        path: /etc/fstab
+        regexp: '^\S+\s+/dev/shm\s'
+        line: "tmpfs /dev/shm tmpfs nosuid,nodev,noexec 0 0"
+      notify: Remount /dev/shm
+
+    # ------------------------------------------------------------------ firewall
+    # Fedora manages nftables through firewalld; writing raw nftables rules
+    # next to it would conflict, so harden firewalld instead.
+    - name: Firewall
+      tags: [firewall]
+      block:
+        - name: Install firewalld
+          dnf:
+            name: firewalld
+            state: present
+
+        - name: Enable and start firewalld
+          service:
+            name: firewalld
+            enabled: true
+            state: started
+
+        # Open the ports before switching zones so SSH never gets blocked.
+        - name: Allow inbound TCP ports in the zone
+          ansible.posix.firewalld:
+            zone: "{{ firewall_zone }}"
+            port: "{{ item }}/tcp"
+            permanent: true
+            immediate: true
+            state: enabled
+          loop: "{{ firewall_allowed_tcp }}"
+
+        - name: Read default zone
+          command: firewall-cmd --get-default-zone
+          register: firewalld_zone
+          changed_when: false
+          check_mode: false
+
+        - name: Set default zone
+          command: firewall-cmd --set-default-zone={{ firewall_zone }}
+          when: firewalld_zone.stdout != firewall_zone
+
+    # ----------------------------------------------------------------------- ssh
+    - name: SSH
+      tags: [ssh]
+      block:
+        # Lockout guard: key-only login needs a key to log in with.
+        - name: Check authorized_keys of the login user
+          stat:
+            path: ~/.ssh/authorized_keys
+          become: false
+          register: authorized_keys
+
+        - name: Refuse to disable password login without authorized_keys
+          assert:
+            that:
+              - authorized_keys.stat.exists
+              - authorized_keys.stat.size > 0
+            fail_msg: "~/.ssh/authorized_keys is missing or empty. Add a key first, or you'll be locked out."
+
+        - name: Install OpenSSH server
+          dnf:
+            name: openssh-server
+            state: present
+
+        # sshd uses the first value it sees, so the drop-ins must be included first.
+        # Fedora already has this line at the top; this only guards older configs.
+        # 10-hardening.conf sorts before Fedora's 50-redhat.conf, so it wins.
+        - name: Include sshd_config.d at the top of sshd_config
+          lineinfile:
+            path: /etc/ssh/sshd_config
+            line: "Include /etc/ssh/sshd_config.d/*.conf"
+            insertbefore: BOF
+            validate: sshd -t -f %s
+          notify: Restart sshd
+
+        - name: Write sshd hardening drop-in
+          copy:
+            dest: /etc/ssh/sshd_config.d/10-hardening.conf
+            mode: "0600"
+            validate: sshd -t -f %s
+            content: |
+              # Managed by ansible (fedora/hardening.yml)
+              PermitRootLogin no
+              PasswordAuthentication no
+              KbdInteractiveAuthentication no
+              PubkeyAuthentication yes
+              X11Forwarding no
+              MaxAuthTries 3
+              LoginGraceTime 30
+          notify: Restart sshd
+
+        - name: Enable and start sshd
+          service:
+            name: sshd
+            enabled: true
+            state: started
+
+    # ------------------------------------------------------------------ fail2ban
+    - name: Fail2ban
+      tags: [fail2ban]
+      block:
+        # fail2ban-firewalld makes firewalld the ban action.
+        - name: Install fail2ban
+          dnf:
+            name: [fail2ban-server, fail2ban-firewalld]
+            state: present
+
+        - name: Configure sshd jail
+          copy:
+            dest: /etc/fail2ban/jail.d/sshd.local
+            mode: "0644"
+            content: |
+              # Managed by ansible (fedora/hardening.yml)
+              [sshd]
+              enabled = true
+              backend = systemd
+              bantime = {{ fail2ban_bantime }}
+              findtime = {{ fail2ban_findtime }}
+              maxretry = {{ fail2ban_maxretry }}
+          notify: Restart fail2ban
+
+        - name: Enable and start fail2ban
+          service:
+            name: fail2ban
+            enabled: true
+            state: started
+
+    # ---------------------------------------------------------------- autoupdate
+    - name: Automatic updates
+      tags: [autoupdate]
+      block:
+        - name: Install dnf5-automatic
+          dnf:
+            name: dnf5-plugin-automatic
+            state: present
+
+        - name: Configure dnf5-automatic to apply updates
+          copy:
+            dest: /etc/dnf/dnf5-plugins/automatic.conf
+            mode: "0644"
+            content: |
+              # Managed by ansible (fedora/hardening.yml)
+              [commands]
+              upgrade_type = {{ autoupdate_type }}
+              apply_updates = yes
+              reboot = never
+
+              [emitters]
+              emit_via = stdio
+
+        - name: Enable dnf5-automatic timer
+          service:
+            name: dnf5-automatic.timer
+            enabled: true
+            state: started
+
+    # ------------------------------------------------------------------- summary
+    - name: Reboot reminder
+      tags: [always]
+      debug:
+        msg: "Reboot required: kernel command line (audit=1) or SELinux state changed."
+      when: reboot_required | bool
+
+  handlers:
+    - name: Load audit rules
+      command: augenrules --load
+
+    - name: Reload sysctl
+      command: sysctl -e -p /etc/sysctl.d/90-hardening.conf
+
+    - name: Remount /dev/shm
+      command: mount -o remount,nosuid,nodev,noexec /dev/shm
+
+    - name: Restart sshd
+      service:
+        name: sshd
+        state: restarted
+
+    - name: Restart fail2ban
+      service:
+        name: fail2ban
+        state: restarted
