@@ -1,1 +1,19 @@
 neovim-minimal/nvim-pack-lock.json
+
+# Secrets (never commit)
+.env
+.env.*
+!.env.example
+secrets.h
+*.key
+*.pem
+*.p12
+*.pfx
+id_rsa*
+id_ed25519*
+*.local.*
+credentials*.json
+
+# Real Alpine answer files (hostname, username, SSH key); only the example is committed
+install/alpine/answers*.conf
+!install/alpine/answers.example.conf

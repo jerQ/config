@@ -21,6 +21,7 @@ Personal dotfiles and system configuration. No build system, no tests, no linter
 | `starship/starship.toml` | Starship prompt config | `~/.config/starship.toml` |
 | `zsh/` | Zsh plugins (autosuggestions, syntax-highlighting) | `~/.config/zsh` (directory symlink) |
 | `ansible/` | Provisioning playbooks | — |
+| `install/alpine/` | CIS-partitioned Alpine install (answer file + disk script) | run from the Alpine live ISO |
 | `install.sh` | Symlinks all configs to target locations | run from repo root |
 
 Each subdirectory has its own README with full details.
@@ -100,8 +101,14 @@ Plugins (git submodules under `zsh/plugins/`, sourced directly — no plugin man
 ## Ansible
 
 Playbooks in `ansible/`, split per OS — pick the directory matching the machine, no OS detection or `when:` conditions:
-- `fedora/`, `debian/`, `alpine/` — `update.yml` (system upgrade), `packages.yml` (CLI tools), `gui.yml` (GUI apps, skip on headless boxes), `neovim.yml` (Neovim from distro repos + clangd/pip, then imports `common/lsp.yml`; Alpine uses doas and installs lua-language-server via apk and pyright via npm instead, since upstream binaries are glibc-only), `site.yml` (runs everything in order)
-- `<os>/hardening.yml` — optional, on-demand security hardening (MAC: AppArmor on Alpine/Debian, SELinux on Fedora; auditd, sysctl, module blacklist, firewall: nftables on Alpine/Debian, firewalld on Fedora; SSH key-only + fail2ban; automatic updates). Not in `site.yml`; sections selectable via tags
+- `fedora/`, `debian/`, `alpine/` — `update.yml` (system upgrade), `packages.yml` (CLI tools), `gui.yml` (GUI apps, skip on headless boxes), `neovim.yml` (Neovim from distro repos + clangd/pip, then imports `common/lsp.yml`; Alpine uses doas and installs lua-language-server via apk and pyright via npm instead, since upstream binaries are glibc-only), `site.yml` (runs everything in order; hardening only with `-e hardening=true`)
+- `<os>/hardening.yml` — optional, on-demand security hardening (MAC: AppArmor on Alpine/Debian, SELinux on Fedora; auditd, sysctl, module blacklist, firewall: nftables on Alpine/Debian, firewalld on Fedora; SSH key-only + fail2ban; automatic updates). Imported by `site.yml` but skipped unless `-e hardening=true`; sections selectable via tags
 - `common/` — OS-independent: `lsp.yml` (pyright via pip, lua-language-server for x86_64/aarch64), `starship.yml` (official install script, no sudo), `setup.yml` (creates `~/Devel`, clones config repo, runs `install.sh`, no sudo)
 
 Usage: `ansible-playbook -i inventory.ini fedora/site.yml`, or pass any combination of individual playbooks.
+
+## Alpine install
+
+`install/alpine/cis-install.sh [--encrypt] <disk> <answerfile|URL>` runs from the Alpine live ISO. It creates GPT (UEFI or BIOS), optional LUKS2, then LVM `vg0` with separate `/var`, `/var/log`, `/var/log/audit`, `/var/tmp` and `/home` volumes, and mounts them with CIS options under `/mnt`. Then it runs `setup-alpine -f` with `DISKOPTS="-m sys /mnt"`; `setup-fstab` copies the mount options into fstab. Afterwards it fixes `/tmp` and `/dev/shm` to `noexec` and adds swap.
+
+`answers.example.conf` is the committed template. The real `answers*.conf` is git-ignored, because it holds the hostname, username and SSH key. It sets `KERNELOPTS` (AppArmor `lsm=`, `audit=1`) via `export`, since setup-alpine sources the file.

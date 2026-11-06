@@ -67,3 +67,7 @@ OpenCode configuration. See [opencode/README.md](opencode/README.md).
 ## ansible
 
 Playbooks for system provisioning. See [ansible/README.md](ansible/README.md).
+
+## install
+
+CIS-partitioned Alpine install from the live ISO (answer file + disk script). See [install/alpine/README.md](install/alpine/README.md).
