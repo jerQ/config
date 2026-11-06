@@ -13,6 +13,96 @@
   vars:
     # Make audit rules immutable (-e 2) until the next reboot.
     audit_immutable: false
+    # High-volume telemetry (every exec, outbound connection, failed file
+    # access, file deletion). Only useful when logs are shipped to a SIEM.
+    audit_telemetry: false
+    # Log every 32-bit syscall. Turn off on hosts that run 32-bit software
+    # (Steam, Wine).
+    audit_32bit_abi: true
+    # Rules about human activity match login UIDs from here up.
+    audit_uid_min: 1000
+    audit_kernel_args: [audit=1, audit_backlog_limit=8192]
+    # auditd.conf: 20 MB x 10 logs = 200 MB. /var/log/audit usually shares
+    # the root filesystem here. Warn via syslog at 150 MB free, suspend
+    # logging at 75 MB free.
+    audit_max_log_file: 20
+    audit_num_logs: 10
+    audit_space_left: 150
+    audit_admin_space_left: 75
+
+    # File and directory watches (perm defaults to wa). A watch is skipped when
+    # its directory doesn't exist. Writes to /usr, /bin and /boot are
+    # deliberately not watched: every dnf upgrade would flood the log.
+    # `rpm -Va` checks installed files against the packages instead.
+    audit_watches:
+      # Accounts and privilege
+      - { path: /etc/passwd, key: identity }
+      - { path: /etc/shadow, key: identity }
+      - { path: /etc/group, key: identity }
+      - { path: /etc/gshadow, key: identity }
+      - { path: /etc/subuid, key: identity }
+      - { path: /etc/subgid, key: identity }
+      - { path: /etc/sudoers, key: privilege }
+      - { path: /etc/sudoers.d, dir: true, key: privilege }
+      - { path: /etc/login.defs, key: login }
+      - { path: /etc/securetty, key: login }
+      - { path: /etc/pam.d, dir: true, key: pam }
+      - { path: /etc/security, dir: true, key: pam }
+      - { path: /etc/polkit-1, dir: true, key: pam }
+      # SSH, including host keys and root's authorized_keys
+      - { path: /etc/ssh, dir: true, key: sshd }
+      - { path: /root/.ssh, dir: true, key: rootkey }
+      # Audit itself: also reads of the logs
+      - { path: /var/log/audit, dir: true, perm: rwa, key: auditlog }
+      - { path: /etc/audit, dir: true, key: auditconfig }
+      # Kernel parameters and modules
+      - { path: /etc/sysctl.conf, key: sysctl }
+      - { path: /etc/sysctl.d, dir: true, key: sysctl }
+      - { path: /etc/modprobe.d, dir: true, key: modprobe }
+      - { path: /etc/modules-load.d, dir: true, key: modprobe }
+      # Boot, init and services
+      - { path: /etc/systemd, dir: true, key: systemd }
+      - { path: /etc/rc.d/rc.local, key: init }
+      - { path: /etc/default, dir: true, key: bootloader }
+      - { path: /etc/kernel, dir: true, key: bootloader }
+      - { path: /etc/fstab, key: fstab }
+      - { path: /etc/udev/rules.d, dir: true, key: udev }
+      - { path: /etc/sysconfig, dir: true, key: sysconfig }
+      # Scheduled jobs
+      - { path: /etc/crontab, key: cron }
+      - { path: /etc/cron.d, dir: true, key: cron }
+      - { path: /etc/cron.hourly, dir: true, key: cron }
+      - { path: /etc/cron.daily, dir: true, key: cron }
+      - { path: /etc/cron.weekly, dir: true, key: cron }
+      - { path: /etc/cron.monthly, dir: true, key: cron }
+      - { path: /etc/anacrontab, key: cron }
+      - { path: /var/spool/cron, dir: true, key: cron }
+      - { path: /etc/at.allow, key: cron }
+      - { path: /etc/at.deny, key: cron }
+      # Packages
+      - { path: /etc/dnf, dir: true, key: dnf }
+      - { path: /etc/yum.repos.d, dir: true, key: dnf }
+      # Shells, environment and library search path
+      - { path: /etc/profile, key: shell_profiles }
+      - { path: /etc/profile.d, dir: true, key: shell_profiles }
+      - { path: /etc/bashrc, key: shell_profiles }
+      - { path: /etc/zshrc, key: shell_profiles }
+      - { path: /etc/shells, key: shell_profiles }
+      - { path: /etc/environment, key: shell_profiles }
+      - { path: /etc/ld.so.conf, key: libpath }
+      - { path: /etc/ld.so.conf.d, dir: true, key: libpath }
+      - { path: /etc/ld.so.preload, key: libpath }
+      # Network and firewall
+      - { path: /etc/hosts, key: network }
+      - { path: /etc/hostname, key: network }
+      - { path: /etc/resolv.conf, key: network }
+      - { path: /etc/NetworkManager, dir: true, key: network }
+      - { path: /etc/firewalld, dir: true, key: firewall }
+      - { path: /etc/fail2ban, dir: true, key: firewall }
+      # Mandatory access control
+      - { path: /etc/selinux, dir: true, key: mac_policy }
+      # Time zone
+      - { path: /etc/localtime, key: localtime }
 
     blacklisted_modules: [dccp, sctp, rds, tipc, cramfs, freevxfs, jffs2, hfs, hfsplus]
 
@@ -54,83 +144,6 @@
           set_fact:
             reboot_required: true
           when: selinux_result.reboot_required | default(false)
-
-    # --------------------------------------------------------------------- audit
-    - name: Audit
-      tags: [audit]
-      block:
-        - name: Install audit
-          dnf:
-            name: [audit, audit-rules]
-            state: present
-
-        # Fedora installs 10-no-audit.rules (-a task,never) as audit.rules,
-        # which turns off all syscall auditing. Replace it with the base config.
-        - name: Replace Fedora's no-audit default rules with the base config
-          copy:
-            src: /usr/share/audit-rules/10-base-config.rules
-            dest: /etc/audit/rules.d/audit.rules
-            remote_src: true
-            mode: "0640"
-          notify: Load audit rules
-
-        - name: Write audit rules
-          copy:
-            dest: /etc/audit/rules.d/50-hardening.rules
-            mode: "0640"
-            content: |
-              # Managed by ansible (fedora/hardening.yml)
-              # Identity and privilege
-              -w /etc/passwd -p wa -k identity
-              -w /etc/shadow -p wa -k identity
-              -w /etc/group -p wa -k identity
-              -w /etc/gshadow -p wa -k identity
-              -w /etc/sudoers -p wa -k privilege
-              -w /etc/sudoers.d/ -p wa -k privilege
-              # SSH config
-              -w /etc/ssh/sshd_config -p wa -k sshd
-              -w /etc/ssh/sshd_config.d/ -p wa -k sshd
-              # Package sources and scheduled jobs
-              -w /etc/yum.repos.d/ -p wa -k dnf
-              -w /etc/crontab -p wa -k cron
-              -w /etc/cron.d/ -p wa -k cron
-              # SELinux config
-              -w /etc/selinux/ -p wa -k selinux
-              # Kernel modules
-              -a always,exit -F arch={{ audit_arch }} -S init_module,finit_module,delete_module -k modules
-              # Time changes
-              -a always,exit -F arch={{ audit_arch }} -S adjtimex,settimeofday,clock_settime -k time
-              # Mounts and hostname
-              -a always,exit -F arch={{ audit_arch }} -S mount -k mount
-              -a always,exit -F arch={{ audit_arch }} -S sethostname -k hostname
-              {% if audit_immutable | bool %}
-              # Lock rules until reboot
-              -e 2
-              {% endif %}
-          notify: Load audit rules
-
-        - name: Enable and start auditd
-          service:
-            name: auditd
-            enabled: true
-            state: started
-
-        # audit=1 lets processes started before auditd be audited too.
-        - name: Read default kernel cmdline
-          command: grubby --info=DEFAULT
-          register: grubby_info
-          changed_when: false
-          check_mode: false
-
-        - name: Add audit=1 to all kernels
-          command: grubby --update-kernel=ALL --args=audit=1
-          when: "'audit=1' not in grubby_info.stdout"
-          register: grubby_update
-
-        - name: Mark reboot as required (kernel cmdline changed)
-          set_fact:
-            reboot_required: true
-          when: grubby_update is changed
 
     # -------------------------------------------------------------------- sysctl
     - name: Write sysctl hardening
@@ -347,16 +360,99 @@
             enabled: true
             state: started
 
+    # --------------------------------------------------------------------- audit
+    # Runs last: watches are only added for directories that exist, and the
+    # sections above create some of them (/etc/fail2ban).
+    - name: Audit
+      tags: [audit]
+      block:
+        - name: Install audit
+          dnf:
+            name: [audit, audit-rules]
+            state: present
+
+        # Fedora installs 10-no-audit.rules (-a task,never) as audit.rules,
+        # which turns off all syscall auditing. Replace it with the base config.
+        - name: Replace Fedora's no-audit default rules with the base config
+          copy:
+            src: /usr/share/audit-rules/10-base-config.rules
+            dest: /etc/audit/rules.d/audit.rules
+            remote_src: true
+            mode: "0640"
+          notify: Load audit rules
+
+        - name: Check which watched directories exist
+          stat:
+            path: "{{ item.path if item.dir | default(false) else item.path | dirname }}"
+          loop: "{{ audit_watches }}"
+          loop_control:
+            label: "{{ item.path }}"
+          register: audit_watch_stat
+
+        - name: Write audit rules
+          template:
+            src: ../common/audit-hardening.rules.j2
+            dest: /etc/audit/rules.d/50-hardening.rules
+            mode: "0640"
+          vars:
+            audit_playbook: fedora/hardening.yml
+          notify: Load audit rules
+
+        - name: Size audit log retention
+          lineinfile:
+            path: /etc/audit/auditd.conf
+            regexp: '^{{ item.key }}\s*='
+            line: "{{ item.key }} = {{ item.value }}"
+          loop:
+            - { key: max_log_file, value: "{{ audit_max_log_file }}" }
+            - { key: num_logs, value: "{{ audit_num_logs }}" }
+            - { key: max_log_file_action, value: ROTATE }
+            - { key: space_left, value: "{{ audit_space_left }}" }
+            - { key: space_left_action, value: SYSLOG }
+            - { key: admin_space_left, value: "{{ audit_admin_space_left }}" }
+            - { key: admin_space_left_action, value: SUSPEND }
+          loop_control:
+            label: "{{ item.key }}"
+          notify: Reload auditd config
+
+        - name: Enable and start auditd
+          service:
+            name: auditd
+            enabled: true
+            state: started
+
+        # audit=1 lets processes started before auditd be audited too. Without
+        # a bigger backlog, the kernel drops events from early boot.
+        - name: Read default kernel cmdline
+          command: grubby --info=DEFAULT
+          register: grubby_info
+          changed_when: false
+          check_mode: false
+
+        - name: Add audit options to all kernels
+          command: grubby --update-kernel=ALL --args="{{ audit_kernel_args | join(' ') }}"
+          when: audit_kernel_args | reject('in', grubby_info.stdout) | list | length > 0
+          register: grubby_update
+
+        - name: Mark reboot as required (kernel cmdline changed)
+          set_fact:
+            reboot_required: true
+          when: grubby_update is changed
+
     # ------------------------------------------------------------------- summary
     - name: Reboot reminder
       tags: [always]
       debug:
-        msg: "Reboot required: kernel command line (audit=1) or SELinux state changed."
+        msg: "Reboot required: kernel command line (audit options) or SELinux state changed."
       when: reboot_required | bool
 
   handlers:
     - name: Load audit rules
       command: augenrules --load
+
+    # SIGHUP makes auditd re-read auditd.conf
+    - name: Reload auditd config
+      command: pkill -HUP -x auditd
 
     - name: Reload sysctl
       command: sysctl -e -p /etc/sysctl.d/90-hardening.conf

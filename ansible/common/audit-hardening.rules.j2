@@ -1,0 +1,79 @@
+{#
+  Shared audit rules for <os>/hardening.yml. Selected from
+  https://github.com/Neo23x0/auditd and trimmed to low-volume, high-value rules.
+  Each playbook provides:
+    audit_watch_stat  registered stat loop over its audit_watches list; a watch is
+                      only written when its directory exists (a missing one makes
+                      the whole rule load fail)
+    audit_arch        b64 or b32
+    audit_uid_min     first login UID (1000 on Alpine, Debian and Fedora)
+    audit_32bit_abi, audit_telemetry, audit_immutable  switches
+#}
+{% set arch = audit_arch %}
+{% set x86 = ansible_facts['architecture'] == 'x86_64' %}
+{% set user = '-F auid>=' ~ audit_uid_min ~ ' -F auid!=unset' %}
+# Managed by ansible ({{ audit_playbook }}), from common/audit-hardening.rules.j2
+# Selected from https://github.com/Neo23x0/auditd.
+# aarch64 has no legacy syscalls (open, chmod, unlink, ...), so those are only
+# added on x86_64.
+
+## File watches
+{% for w in audit_watch_stat.results | selectattr('stat.exists') | map(attribute='item') %}
+-a always,exit -F {{ 'dir' if w.dir | default(false) else 'path' }}={{ w.path }} -F perm={{ w.perm | default('wa') }} -k {{ w.key }}
+{% endfor %}
+
+## Kernel modules, kexec, swap
+-a always,exit -F arch={{ arch }} -S init_module,finit_module,delete_module -k modules
+-a always,exit -F arch={{ arch }} -S kexec_load,kexec_file_load -k kexec
+-a always,exit -F arch={{ arch }} -S swapon,swapoff -F auid!=unset -k swap
+
+## Time, mounts, hostname
+-a always,exit -F arch={{ arch }} -S adjtimex,settimeofday,clock_settime -k time
+-a always,exit -F arch={{ arch }} -S mount,umount2 -k mount
+-a always,exit -F arch={{ arch }} -S sethostname,setdomainname -k hostname
+
+## setuid/setgid bits set by anyone, root and package managers included.
+## Must come before perm_mod: audit logs the first matching rule only.
+## setgid only on files: on directories it is harmless and common (Alpine's
+## home directories have it, so every chmod of a subdirectory would match).
+-a always,exit -F arch={{ arch }} -S {{ 'chmod,' if x86 }}fchmod -F a1&04000 -k setuid
+-a always,exit -F arch={{ arch }} -S fchmodat -F a2&04000 -k setuid
+-a always,exit -F arch={{ arch }} -S {{ 'chmod,' if x86 }}fchmod -F a1&02000 -F filetype=file -k setuid
+-a always,exit -F arch={{ arch }} -S fchmodat -F a2&02000 -F filetype=file -k setuid
+
+## Permission and ownership changes users make as themselves. Changes made
+## as root (sudo/doas) are left out: package managers chmod/chown every file
+## they install, which floods the log. Root's changes to sensitive files are
+## caught by the watches above, and setuid bits by the rules just above.
+-a always,exit -F arch={{ arch }} -S {{ 'chmod,' if x86 }}fchmod,fchmodat {{ user }} -F euid>={{ audit_uid_min }} -k perm_mod
+-a always,exit -F arch={{ arch }} -S {{ 'chown,lchown,' if x86 }}fchown,fchownat {{ user }} -F euid>={{ audit_uid_min }} -k perm_mod
+-a always,exit -F arch={{ arch }} -S setxattr,lsetxattr,fsetxattr,removexattr,lremovexattr,fremovexattr {{ user }} -F euid>={{ audit_uid_min }} -k perm_mod
+
+## Attack techniques: process injection, in-memory execution, eBPF,
+## exploitation primitives
+-a always,exit -F arch={{ arch }} -S ptrace -k tracing
+-a always,exit -F arch={{ arch }} -S process_vm_readv,process_vm_writev -k process_vm
+-a always,exit -F arch={{ arch }} -S memfd_create -k anon_file_create
+-a always,exit -F arch={{ arch }} -S bpf -k bpf
+-a always,exit -F arch={{ arch }} -S userfaultfd -k userfaultfd
+## io_uring operations bypass syscall auditing: log at least the setup
+-a always,exit -F arch={{ arch }} -S io_uring_setup -k io_uring
+{% if arch == 'b64' and audit_32bit_abi | bool %}
+## Any 32-bit syscall on a 64-bit system is suspicious (audit_32bit_abi)
+-a always,exit -F arch=b32 -S all -k 32bit_abi
+{% endif %}
+{% if audit_telemetry | bool %}
+
+## Telemetry (audit_telemetry)
+-a always,exit -F arch={{ arch }} -S execve,execveat -k process_creation
+-a always,exit -F arch={{ arch }} -S connect -F a2=16 -F success=1 -k network_connect_4
+-a always,exit -F arch={{ arch }} -S connect -F a2=28 -F success=1 -k network_connect_6
+-a always,exit -F arch={{ arch }} -S {{ 'open,creat,' if x86 }}openat,openat2,open_by_handle_at,truncate,ftruncate -F exit=-EACCES {{ user }} -k file_access
+-a always,exit -F arch={{ arch }} -S {{ 'open,creat,' if x86 }}openat,openat2,open_by_handle_at,truncate,ftruncate -F exit=-EPERM {{ user }} -k file_access
+-a always,exit -F arch={{ arch }} -S {{ 'unlink,rmdir,rename,renameat,' if x86 }}unlinkat,renameat2 {{ user }} -k delete
+{% endif %}
+{% if audit_immutable | bool %}
+
+## Lock rules until reboot
+-e 2
+{% endif %}

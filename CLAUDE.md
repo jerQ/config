@@ -103,7 +103,7 @@ Plugins (git submodules under `zsh/plugins/`, sourced directly — no plugin man
 Playbooks in `ansible/`, split per OS — pick the directory matching the machine, no OS detection or `when:` conditions:
 - `fedora/`, `debian/`, `alpine/` — `update.yml` (system upgrade), `packages.yml` (CLI tools), `gui.yml` (GUI apps, skip on headless boxes), `neovim.yml` (Neovim from distro repos + clangd/pip, then imports `common/lsp.yml`; Alpine uses doas and installs lua-language-server via apk and pyright via npm instead, since upstream binaries are glibc-only), `site.yml` (runs everything in order; hardening only with `-e hardening=true`)
 - `<os>/hardening.yml` — optional, on-demand security hardening (MAC: AppArmor on Alpine/Debian, SELinux on Fedora; auditd, sysctl, module blacklist, firewall: nftables on Alpine/Debian, firewalld on Fedora; SSH key-only + fail2ban; automatic updates). Imported by `site.yml` but skipped unless `-e hardening=true`; sections selectable via tags
-- `common/` — OS-independent: `lsp.yml` (pyright via pip, lua-language-server for x86_64/aarch64), `starship.yml` (official install script, no sudo), `setup.yml` (creates `~/Devel`, clones config repo, runs `install.sh`, no sudo)
+- `common/` — OS-independent: `lsp.yml` (pyright via pip, lua-language-server for x86_64/aarch64), `starship.yml` (official install script, no sudo), `setup.yml` (creates `~/Devel`, clones config repo, runs `install.sh`, no sudo), `audit-hardening.rules.j2` (audit rules template shared by the three `hardening.yml`; each OS supplies its own `audit_watches` list)
 
 Usage: `ansible-playbook -i inventory.ini fedora/site.yml`, or pass any combination of individual playbooks.
 
