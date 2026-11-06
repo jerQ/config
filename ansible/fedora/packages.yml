@@ -1,0 +1,35 @@
+---
+- name: Install common packages (Fedora)
+  hosts: all
+  become: true
+
+  vars:
+    packages:
+      - git
+      - gh
+      - curl
+      - fzf
+      - fd-find
+      - zoxide
+      - ripgrep
+      - tree
+      - tmux
+      - bat
+      - cmake
+      - make
+      - gcc
+      - gcc-c++
+      - autoconf
+      - automake
+      - golang
+      - cargo
+      - python3
+      - ansible
+      - podman
+      - doctl
+
+  tasks:
+    - name: Install packages
+      dnf:
+        name: "{{ packages }}"
+        state: present

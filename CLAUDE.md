@@ -89,7 +89,7 @@ File: `starship/starship.toml` → `~/.config/starship.toml`.
 
 Two-line prompt, plain-text symbols (no Nerd Font required): directory, git branch/status, language version (`c`, `golang`, `lua`, `python`, `rust` — shown only when relevant to the current directory), command duration (if >2s), then an exit-code-colored `❯` on its own line.
 
-Theme: Catppuccin Frappé, matching tmux, fzf, and neovim. Installed via the official install script into `~/.local/bin` (see `ansible/packages.yml`) since it isn't reliably packaged via `dnf`/`apt` and a `cargo install` compile is too slow/heavy on low-power devices (e.g. Raspberry Pi).
+Theme: Catppuccin Frappé, matching tmux, fzf, and neovim. Installed via the official install script into `~/.local/bin` (see `ansible/common/starship.yml`) since it isn't reliably packaged via `dnf`/`apt` and a `cargo install` compile is too slow/heavy on low-power devices (e.g. Raspberry Pi).
 
 ## Zsh Plugins
 
@@ -99,9 +99,8 @@ Plugins (git submodules under `zsh/plugins/`, sourced directly — no plugin man
 
 ## Ansible
 
-Playbooks in `ansible/`:
-- `main.yml` — runs all playbooks in order (update → packages → neovim → setup)
-- `update.yml` — updates all packages on Debian/Ubuntu (`apt`) and Fedora (`dnf`)
-- `packages.yml` — installs common CLI tools (including neovim) and GUI apps on Debian/Ubuntu (`apt`) and Fedora (`dnf`), plus `starship` via its official install script
-- `neovim.yml` — fetches latest stable tag from GitHub, compiles, and installs Neovim to `/usr/local`
-- `setup.yml` — creates `~/Devel`, clones config repo, and runs `install.sh` (runs as current user, no sudo)
+Playbooks in `ansible/`, split per OS — pick the directory matching the machine, no OS detection or `when:` conditions:
+- `fedora/`, `debian/`, `alpine/` — `update.yml` (system upgrade), `packages.yml` (CLI tools), `gui.yml` (GUI apps, skip on headless boxes), `neovim.yml` (Neovim from distro repos + clangd/pip, then imports `common/lsp.yml`; Alpine uses doas and installs lua-language-server via apk and pyright via npm instead, since upstream binaries are glibc-only), `site.yml` (runs everything in order)
+- `common/` — OS-independent: `lsp.yml` (pyright via pip, lua-language-server for x86_64/aarch64), `starship.yml` (official install script, no sudo), `setup.yml` (creates `~/Devel`, clones config repo, runs `install.sh`, no sudo)
+
+Usage: `ansible-playbook -i inventory.ini fedora/site.yml`, or pass any combination of individual playbooks.

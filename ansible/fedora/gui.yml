@@ -1,0 +1,11 @@
+---
+- name: Install GUI apps (Fedora)
+  hosts: all
+  become: true
+
+  tasks:
+    - name: Install GUI apps
+      dnf:
+        name:
+          - keepassxc
+        state: present

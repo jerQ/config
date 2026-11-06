@@ -1,0 +1,11 @@
+---
+- name: Update Alpine
+  hosts: all
+  become: true
+  become_method: community.general.doas
+
+  tasks:
+    - name: Update all packages
+      community.general.apk:
+        upgrade: true
+        update_cache: true

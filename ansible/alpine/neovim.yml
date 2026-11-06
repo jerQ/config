@@ -1,0 +1,33 @@
+---
+# Self-contained: does not use common/lsp.yml, because the upstream
+# lua-language-server binaries are glibc builds and pyright's pip wrapper
+# downloads a glibc node — neither runs on musl.
+- name: Install Neovim and LSP servers (Alpine)
+  hosts: all
+  become: true
+  become_method: community.general.doas
+
+  vars:
+    # clangd is only packaged versioned (clangNN-extra-tools).
+    # Alpine v3.24 ships clang22; override with -e clang_version=NN.
+    clang_version: 22
+
+  tasks:
+    - name: Install Neovim, runtime dependencies and LSP servers
+      community.general.apk:
+        name:
+          - neovim
+          - ripgrep
+          - fzf
+          - "clang{{ clang_version }}-extra-tools"
+          - lua-language-server
+          - nodejs
+          - npm
+        state: present
+        update_cache: true
+
+    - name: Install pyright via npm
+      community.general.npm:
+        name: pyright
+        global: true
+        state: present

@@ -1,0 +1,18 @@
+---
+- name: Install Neovim and LSP dependencies (Fedora)
+  hosts: all
+  become: true
+
+  tasks:
+    # clang-tools-extra provides clangd; python3-pip is needed for pyright
+    - name: Install Neovim, runtime and LSP dependencies
+      dnf:
+        name:
+          - neovim
+          - ripgrep
+          - fzf
+          - clang-tools-extra
+          - python3-pip
+        state: present
+
+- import_playbook: ../common/lsp.yml

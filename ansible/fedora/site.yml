@@ -1,0 +1,9 @@
+---
+# Run everything in order. Comment out what this machine doesn't need
+# (e.g. gui.yml on a headless box), or run the playbooks individually.
+- import_playbook: update.yml
+- import_playbook: packages.yml
+- import_playbook: gui.yml
+- import_playbook: neovim.yml
+- import_playbook: ../common/starship.yml
+- import_playbook: ../common/setup.yml

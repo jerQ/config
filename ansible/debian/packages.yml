@@ -1,0 +1,35 @@
+---
+- name: Install common packages (Debian/Ubuntu)
+  hosts: all
+  become: true
+
+  vars:
+    packages:
+      - git
+      - gh
+      - curl
+      - fzf
+      - fd-find
+      - zoxide
+      - ripgrep
+      - tree
+      - tmux
+      - bat
+      - cmake
+      - make
+      - gcc
+      - g++
+      - autoconf
+      - automake
+      - golang-go
+      - cargo
+      - python3
+      - ansible
+      - podman
+
+  tasks:
+    - name: Install packages
+      apt:
+        name: "{{ packages }}"
+        state: present
+        update_cache: true

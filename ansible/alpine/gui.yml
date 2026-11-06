@@ -1,0 +1,13 @@
+---
+- name: Install GUI apps (Alpine)
+  hosts: all
+  become: true
+  become_method: community.general.doas
+
+  tasks:
+    - name: Install GUI apps
+      community.general.apk:
+        name:
+          - keepassxc
+        state: present
+        update_cache: true

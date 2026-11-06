@@ -1,0 +1,12 @@
+---
+- name: Update Debian/Ubuntu
+  hosts: all
+  become: true
+
+  tasks:
+    - name: Update all packages
+      apt:
+        upgrade: dist
+        update_cache: true
+        autoremove: true
+        autoclean: true

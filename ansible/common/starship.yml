@@ -1,0 +1,10 @@
+---
+- name: Install starship prompt
+  hosts: all
+  become: false
+
+  tasks:
+    - name: Install starship into ~/.local/bin
+      shell: curl -sS https://starship.rs/install.sh | sh -s -- --yes --bin-dir "$HOME/.local/bin"
+      args:
+        creates: "$HOME/.local/bin/starship"

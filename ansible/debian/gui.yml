@@ -1,0 +1,12 @@
+---
+- name: Install GUI apps (Debian/Ubuntu)
+  hosts: all
+  become: true
+
+  tasks:
+    - name: Install GUI apps
+      apt:
+        name:
+          - keepassxc
+        state: present
+        update_cache: true

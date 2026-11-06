@@ -1,0 +1,19 @@
+---
+- name: Install Neovim and LSP dependencies (Debian/Ubuntu)
+  hosts: all
+  become: true
+
+  tasks:
+    # python3-pip is needed for pyright
+    - name: Install Neovim, runtime and LSP dependencies
+      apt:
+        name:
+          - neovim
+          - ripgrep
+          - fzf
+          - clangd
+          - python3-pip
+        state: present
+        update_cache: true
+
+- import_playbook: ../common/lsp.yml

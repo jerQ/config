@@ -1,0 +1,38 @@
+---
+- name: Install common packages (Alpine)
+  hosts: all
+  become: true
+  become_method: community.general.doas
+
+  vars:
+    packages:
+      - bash          # install.sh (common/setup.yml) needs bash
+      - git
+      - github-cli
+      - curl
+      - fzf
+      - fd
+      - zoxide
+      - ripgrep
+      - tree
+      - tmux
+      - bat
+      - cmake
+      - make
+      - gcc
+      - g++
+      - autoconf
+      - automake
+      - go
+      - cargo
+      - python3
+      - ansible
+      - podman
+      - doctl
+
+  tasks:
+    - name: Install packages
+      community.general.apk:
+        name: "{{ packages }}"
+        state: present
+        update_cache: true
