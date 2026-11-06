@@ -1,0 +1,419 @@
+---
+# Optional security hardening for Alpine. Not part of site.yml — run on demand.
+# Every section is tagged, so you can pick only what you need:
+#   ansible-playbook -i inventory.ini alpine/hardening.yml --tags sysctl,firewall
+# Tags: apparmor, audit, sysctl, modules, mounts, firewall, ssh, fail2ban, autoupdate
+# Try it first with --check --diff. Keep a second SSH session open while
+# applying the ssh/firewall tags. A reboot is needed for AppArmor and audit=1.
+- name: Harden Alpine
+  hosts: all
+  become: true
+  become_method: community.general.doas
+
+  vars:
+    # LSMs to enable on the kernel command line. linux-lts builds AppArmor in,
+    # but leaves it out of the default CONFIG_LSM.
+    lsm_list: landlock,lockdown,yama,integrity,apparmor
+    kernel_cmdline_extra: "lsm={{ lsm_list }} audit=1"
+
+    # Make audit rules immutable (-e 2) until the next reboot.
+    audit_immutable: false
+
+    blacklisted_modules: [dccp, sctp, rds, tipc, cramfs, freevxfs, jffs2, hfs, hfsplus]
+
+    # Inbound TCP ports to allow. Keep your SSH port here!
+    firewall_allowed_tcp: [22]
+    # Rootful podman containers need forwarding: set to "accept" on those hosts.
+    firewall_forward_policy: drop
+
+    fail2ban_bantime: 1h
+    fail2ban_findtime: 10m
+    fail2ban_maxretry: 5
+
+    audit_arch: "b{{ ansible_facts['userspace_bits'] | default('64') }}"
+    reboot_required: false
+
+  tasks:
+    # ------------------------------------------------------------------ apparmor
+    - name: AppArmor
+      tags: [apparmor]
+      block:
+        - name: Install AppArmor
+          community.general.apk:
+            name: [apparmor, apparmor-utils, apparmor-profiles]
+            state: present
+            update_cache: true
+
+        # Only enable: the service can't start until the kernel boots with the LSM.
+        - name: Enable AppArmor service in boot runlevel
+          service:
+            name: apparmor
+            enabled: true
+            runlevel: boot
+
+        - name: Detect bootloader config
+          stat:
+            path: "{{ item }}"
+          loop:
+            - /etc/update-extlinux.conf
+            - /etc/default/grub
+            - /boot/cmdline.txt
+          register: bootcfg
+
+        # Each regex only matches a line that doesn't contain "lsm=" yet,
+        # so re-runs don't touch it.
+        - name: Add LSM and audit to kernel cmdline (extlinux)
+          replace:
+            path: /etc/update-extlinux.conf
+            regexp: '^(default_kernel_opts=")((?:(?!lsm=)[^"])*)"$'
+            replace: '\1\2 {{ kernel_cmdline_extra }}"'
+          when: bootcfg.results[0].stat.exists
+          register: cmdline_extlinux
+          notify: Update extlinux
+
+        - name: Add LSM and audit to kernel cmdline (GRUB)
+          replace:
+            path: /etc/default/grub
+            regexp: '^(GRUB_CMDLINE_LINUX_DEFAULT=")((?:(?!lsm=)[^"])*)"$'
+            replace: '\1\2 {{ kernel_cmdline_extra }}"'
+          when:
+            - not bootcfg.results[0].stat.exists
+            - bootcfg.results[1].stat.exists
+          register: cmdline_grub
+          notify: Update GRUB config
+
+        - name: Add LSM and audit to kernel cmdline (Raspberry Pi)
+          replace:
+            path: /boot/cmdline.txt
+            regexp: '^((?:(?!lsm=).)+?)[ \t]*$'
+            replace: '\1 {{ kernel_cmdline_extra }}'
+          when:
+            - not bootcfg.results[0].stat.exists
+            - not bootcfg.results[1].stat.exists
+            - bootcfg.results[2].stat.exists
+          register: cmdline_rpi
+
+        - name: Warn when no known bootloader config was found
+          debug:
+            msg: "No extlinux/GRUB/cmdline.txt found. Add '{{ kernel_cmdline_extra }}' to the kernel command line manually."
+          when: bootcfg.results | selectattr('stat.exists') | list | length == 0
+
+        - name: Mark reboot as required
+          set_fact:
+            reboot_required: true
+          when: (cmdline_extlinux is changed) or (cmdline_grub is changed) or (cmdline_rpi is changed)
+
+    # --------------------------------------------------------------------- audit
+    - name: Audit
+      tags: [audit]
+      block:
+        - name: Install audit
+          community.general.apk:
+            name: audit
+            state: present
+            update_cache: true
+
+        - name: Write audit rules
+          copy:
+            dest: /etc/audit/rules.d/50-hardening.rules
+            mode: "0640"
+            content: |
+              # Managed by ansible (alpine/hardening.yml)
+              # Identity and privilege
+              -w /etc/passwd -p wa -k identity
+              -w /etc/shadow -p wa -k identity
+              -w /etc/group -p wa -k identity
+              -w /etc/gshadow -p wa -k identity
+              -w /etc/doas.conf -p wa -k privilege
+              # SSH config
+              -w /etc/ssh/sshd_config -p wa -k sshd
+              -w /etc/ssh/sshd_config.d/ -p wa -k sshd
+              # Package sources and scheduled jobs
+              -w /etc/apk/repositories -p wa -k apk
+              -w /etc/periodic/ -p wa -k cron
+              # Kernel modules
+              -a always,exit -F arch={{ audit_arch }} -S init_module,finit_module,delete_module -k modules
+              # Time changes
+              -a always,exit -F arch={{ audit_arch }} -S adjtimex,settimeofday,clock_settime -k time
+              # Mounts and hostname
+              -a always,exit -F arch={{ audit_arch }} -S mount -k mount
+              -a always,exit -F arch={{ audit_arch }} -S sethostname -k hostname
+              {% if audit_immutable %}
+              # Lock rules until reboot
+              -e 2
+              {% endif %}
+          notify: Load audit rules
+
+        - name: Enable and start auditd
+          service:
+            name: auditd
+            enabled: true
+            state: started
+
+    # -------------------------------------------------------------------- sysctl
+    - name: Sysctl
+      tags: [sysctl]
+      block:
+        - name: Write sysctl hardening
+          copy:
+            dest: /etc/sysctl.d/90-hardening.conf
+            mode: "0644"
+            content: |
+              # Managed by ansible (alpine/hardening.yml)
+              # User namespaces stay enabled: rootless podman needs them.
+              kernel.kptr_restrict = 2
+              kernel.dmesg_restrict = 1
+              kernel.unprivileged_bpf_disabled = 1
+              net.core.bpf_jit_harden = 2
+              kernel.yama.ptrace_scope = 1
+              kernel.kexec_load_disabled = 1
+              fs.protected_hardlinks = 1
+              fs.protected_symlinks = 1
+              fs.protected_fifos = 2
+              fs.protected_regular = 2
+              fs.suid_dumpable = 0
+
+              net.ipv4.conf.all.rp_filter = 1
+              net.ipv4.conf.default.rp_filter = 1
+              net.ipv4.conf.all.accept_redirects = 0
+              net.ipv4.conf.default.accept_redirects = 0
+              net.ipv4.conf.all.secure_redirects = 0
+              net.ipv4.conf.default.secure_redirects = 0
+              net.ipv4.conf.all.send_redirects = 0
+              net.ipv4.conf.default.send_redirects = 0
+              net.ipv4.conf.all.accept_source_route = 0
+              net.ipv4.conf.default.accept_source_route = 0
+              net.ipv4.conf.all.log_martians = 1
+              net.ipv4.conf.default.log_martians = 1
+              net.ipv4.tcp_syncookies = 1
+              net.ipv4.icmp_echo_ignore_broadcasts = 1
+
+              net.ipv6.conf.all.accept_redirects = 0
+              net.ipv6.conf.default.accept_redirects = 0
+              net.ipv6.conf.all.accept_source_route = 0
+              net.ipv6.conf.default.accept_source_route = 0
+          notify: Reload sysctl
+
+        - name: Enable sysctl service in boot runlevel
+          service:
+            name: sysctl
+            enabled: true
+            runlevel: boot
+
+    # ------------------------------------------------------------------- modules
+    - name: Block unused kernel modules
+      tags: [modules]
+      copy:
+        dest: /etc/modprobe.d/hardening.conf
+        mode: "0644"
+        content: |
+          # Managed by ansible (alpine/hardening.yml)
+          {% for mod in blacklisted_modules %}
+          install {{ mod }} /bin/false
+          {% endfor %}
+
+    # -------------------------------------------------------------------- mounts
+    - name: Mount /dev/shm with nosuid,nodev,noexec
+      tags: [mounts]
+      lineinfile:
+        path: /etc/fstab
+        regexp: '^\S+\s+/dev/shm\s'
+        line: "shm /dev/shm tmpfs nosuid,nodev,noexec 0 0"
+      notify: Remount /dev/shm
+
+    # ------------------------------------------------------------------ firewall
+    - name: Firewall
+      tags: [firewall]
+      block:
+        - name: Install nftables
+          community.general.apk:
+            name: nftables
+            state: present
+            update_cache: true
+
+        # Only our own table is replaced on reload, so fail2ban's and
+        # podman's tables are left alone.
+        - name: Write nftables ruleset
+          copy:
+            dest: /etc/nftables.nft
+            mode: "0644"
+            validate: nft -c -f %s
+            content: |
+              #!/usr/sbin/nft -f
+              # Managed by ansible (alpine/hardening.yml)
+              table inet filter
+              delete table inet filter
+
+              table inet filter {
+                chain input {
+                  type filter hook input priority filter; policy drop;
+                  ct state established,related accept
+                  ct state invalid drop
+                  iif "lo" accept
+                  icmpv6 type { nd-neighbor-solicit, nd-neighbor-advert, nd-router-solicit, nd-router-advert } accept
+                  meta l4proto { icmp, ipv6-icmp } limit rate 10/second accept
+              {% if firewall_allowed_tcp | length > 0 %}
+                  tcp dport { {{ firewall_allowed_tcp | join(', ') }} } accept
+              {% endif %}
+                }
+                chain forward {
+                  type filter hook forward priority filter; policy {{ firewall_forward_policy }};
+                }
+                chain output {
+                  type filter hook output priority filter; policy accept;
+                }
+              }
+          notify: Reload nftables
+
+        - name: Enable and start nftables
+          service:
+            name: nftables
+            enabled: true
+            state: started
+
+    # ----------------------------------------------------------------------- ssh
+    - name: SSH
+      tags: [ssh]
+      block:
+        # Lockout guard: key-only login needs a key to log in with.
+        - name: Check authorized_keys of the login user
+          stat:
+            path: ~/.ssh/authorized_keys
+          become: false
+          register: authorized_keys
+
+        - name: Refuse to disable password login without authorized_keys
+          assert:
+            that:
+              - authorized_keys.stat.exists
+              - authorized_keys.stat.size > 0
+            fail_msg: "~/.ssh/authorized_keys is missing or empty. Add a key first, or you'll be locked out."
+
+        - name: Install OpenSSH server
+          community.general.apk:
+            name: openssh-server
+            state: present
+            update_cache: true
+
+        # sshd uses the first value it sees, so the drop-ins must be included first.
+        - name: Include sshd_config.d at the top of sshd_config
+          lineinfile:
+            path: /etc/ssh/sshd_config
+            line: "Include /etc/ssh/sshd_config.d/*.conf"
+            insertbefore: BOF
+            validate: sshd -t -f %s
+          notify: Restart sshd
+
+        - name: Write sshd hardening drop-in
+          copy:
+            dest: /etc/ssh/sshd_config.d/10-hardening.conf
+            mode: "0644"
+            validate: sshd -t -f %s
+            content: |
+              # Managed by ansible (alpine/hardening.yml)
+              PermitRootLogin no
+              PasswordAuthentication no
+              KbdInteractiveAuthentication no
+              PubkeyAuthentication yes
+              X11Forwarding no
+              MaxAuthTries 3
+              LoginGraceTime 30
+          notify: Restart sshd
+
+        - name: Enable and start sshd
+          service:
+            name: sshd
+            enabled: true
+            state: started
+
+    # ------------------------------------------------------------------ fail2ban
+    - name: Fail2ban
+      tags: [fail2ban]
+      block:
+        - name: Install fail2ban
+          community.general.apk:
+            name: fail2ban
+            state: present
+            update_cache: true
+
+        - name: Configure sshd jail
+          copy:
+            dest: /etc/fail2ban/jail.d/sshd.local
+            mode: "0644"
+            content: |
+              # Managed by ansible (alpine/hardening.yml)
+              [sshd]
+              enabled = true
+              # busybox syslogd (Alpine default) logs here
+              logpath = /var/log/messages
+              banaction = nftables-multiport
+              bantime = {{ fail2ban_bantime }}
+              findtime = {{ fail2ban_findtime }}
+              maxretry = {{ fail2ban_maxretry }}
+          notify: Restart fail2ban
+
+        - name: Enable and start fail2ban
+          service:
+            name: fail2ban
+            enabled: true
+            state: started
+
+    # ---------------------------------------------------------------- autoupdate
+    - name: Automatic updates
+      tags: [autoupdate]
+      block:
+        - name: Install daily apk upgrade job
+          copy:
+            dest: /etc/periodic/daily/apk-upgrade
+            mode: "0755"
+            content: |
+              #!/bin/sh
+              # Managed by ansible (alpine/hardening.yml)
+              # Kernel updates still need a manual reboot.
+              if apk update -q && apk upgrade -q; then
+                  logger -t apk-upgrade "apk upgrade finished"
+              else
+                  logger -t apk-upgrade -p user.err "apk upgrade failed"
+              fi
+
+        - name: Enable and start crond
+          service:
+            name: crond
+            enabled: true
+            state: started
+
+    # ------------------------------------------------------------------- summary
+    - name: Reboot reminder
+      tags: [always]
+      debug:
+        msg: "Kernel command line changed: reboot to enable AppArmor and audit=1."
+      when: reboot_required | bool
+
+  handlers:
+    - name: Update extlinux
+      command: update-extlinux
+
+    - name: Update GRUB config
+      command: grub-mkconfig -o /boot/grub/grub.cfg
+
+    - name: Load audit rules
+      command: augenrules --load
+
+    - name: Reload sysctl
+      command: sysctl -e -p /etc/sysctl.d/90-hardening.conf
+
+    - name: Remount /dev/shm
+      command: mount -o remount,nosuid,nodev,noexec /dev/shm
+
+    - name: Reload nftables
+      command: nft -f /etc/nftables.nft
+
+    - name: Restart sshd
+      service:
+        name: sshd
+        state: restarted
+
+    - name: Restart fail2ban
+      service:
+        name: fail2ban
+        state: restarted
