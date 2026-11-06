@@ -241,6 +241,10 @@ mount --bind /dev "$MNT/dev"
 # setup-disk only enables swap when it created the swap itself
 chroot "$MNT" rc-update add swap boot >/dev/null
 
+# Ansible (the next step after first boot) needs Python on the target
+info "Installing python3 for Ansible"
+apk add --quiet --root "$MNT" python3 || die "could not install python3"
+
 # musl has no locale data of its own: musl-locales provides it, and
 # /etc/profile.d sets LANG for login shells
 if [ -n "$locale" ]; then

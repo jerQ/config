@@ -69,7 +69,7 @@ The answer file also sets the installed system's kernel command line: `lsm=…,a
    sh cis-install.sh --encrypt /dev/nvme0n1 answers.conf     # with LUKS2
    ```
 
-   It asks you to type `YES` before wiping the disk. With `--encrypt` it then asks for the LUKS passphrase. `setup-alpine` asks for the root password. At the end, the script asks for the user's password: `setup-user` skips it when the answer file names the user, but doas needs it.
+   It asks you to type `YES` before wiping the disk. With `--encrypt` it then asks for the LUKS passphrase. `setup-alpine` asks for the root password. It also installs `python3` (Ansible needs it on the target). At the end, the script asks for the user's password: `setup-user` skips it when the answer file names the user, but doas needs it.
 6. Remove the ISO and reboot. With `--encrypt`, you type the passphrase at every boot.
 7. Harden the installed system (AppArmor, auditd, sysctl, firewall, SSH, …):
 

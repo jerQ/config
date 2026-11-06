@@ -18,6 +18,80 @@
 
     # Make audit rules immutable (-e 2) until the next reboot.
     audit_immutable: false
+    # High-volume telemetry (every exec, outbound connection, failed file
+    # access, file deletion). Only useful when logs are shipped to a SIEM.
+    audit_telemetry: false
+    # Rules about human activity match login UIDs from here up (Alpine: 1000).
+    audit_uid_min: 1000
+    # auditd.conf: 50 MB x 15 logs = 750 MB, sized for the 1G /var/log/audit
+    # volume of install/alpine. Warn via syslog at 150 MB free, suspend
+    # logging at 75 MB free.
+    audit_max_log_file: 50
+    audit_num_logs: 15
+    audit_space_left: 150
+    audit_admin_space_left: 75
+
+    # File and directory watches (perm defaults to wa). A watch is skipped when
+    # its directory doesn't exist, e.g. /etc/apparmor.d without the apparmor tag.
+    # Writes to /usr, /bin and /boot are deliberately not watched: every apk
+    # upgrade would flood the log. Use `apk audit --system` for that instead.
+    audit_watches:
+      # Accounts and privilege
+      - { path: /etc/passwd, key: identity }
+      - { path: /etc/shadow, key: identity }
+      - { path: /etc/group, key: identity }
+      - { path: /etc/gshadow, key: identity }
+      - { path: /etc/subuid, key: identity }
+      - { path: /etc/subgid, key: identity }
+      - { path: /etc/doas.conf, key: privilege }
+      - { path: /etc/doas.d, dir: true, key: privilege }
+      - { path: /etc/login.defs, key: login }
+      - { path: /etc/securetty, key: login }
+      # SSH, including host keys and root's authorized_keys
+      - { path: /etc/ssh, dir: true, key: sshd }
+      - { path: /root/.ssh, dir: true, key: rootkey }
+      # Audit itself: also reads of the logs
+      - { path: /var/log/audit, dir: true, perm: rwa, key: auditlog }
+      - { path: /etc/audit, dir: true, key: auditconfig }
+      # Kernel parameters and modules
+      - { path: /etc/sysctl.conf, key: sysctl }
+      - { path: /etc/sysctl.d, dir: true, key: sysctl }
+      - { path: /etc/modprobe.d, dir: true, key: modprobe }
+      - { path: /etc/modules, key: modprobe }
+      - { path: /etc/modules-load.d, dir: true, key: modprobe }
+      # Boot, init and services (OpenRC)
+      - { path: /etc/inittab, key: init }
+      - { path: /etc/init.d, dir: true, key: init }
+      - { path: /etc/conf.d, dir: true, key: init }
+      - { path: /etc/runlevels, dir: true, key: init }
+      - { path: /etc/local.d, dir: true, key: init }
+      - { path: /etc/default, dir: true, key: bootloader }
+      - { path: /etc/update-extlinux.conf, key: bootloader }
+      - { path: /etc/fstab, key: fstab }
+      - { path: /etc/mdev.conf, key: mdev }
+      # Scheduled jobs
+      - { path: /etc/crontabs, dir: true, key: cron }
+      - { path: /etc/periodic, dir: true, key: cron }
+      # Packages
+      - { path: /etc/apk, dir: true, key: apk }
+      # Shells and environment
+      - { path: /etc/profile, key: shell_profiles }
+      - { path: /etc/profile.d, dir: true, key: shell_profiles }
+      - { path: /etc/shells, key: shell_profiles }
+      - { path: /etc/environment, key: shell_profiles }
+      # Network and firewall
+      - { path: /etc/hosts, key: network }
+      - { path: /etc/hostname, key: network }
+      - { path: /etc/resolv.conf, key: network }
+      - { path: /etc/network, dir: true, key: network }
+      - { path: /etc/nftables.nft, key: firewall }
+      - { path: /etc/nftables.d, dir: true, key: firewall }
+      - { path: /etc/fail2ban, dir: true, key: firewall }
+      # Mandatory access control
+      - { path: /etc/apparmor, dir: true, key: mac_policy }
+      - { path: /etc/apparmor.d, dir: true, key: mac_policy }
+      # Time zone
+      - { path: /etc/localtime, key: localtime }
 
     blacklisted_modules: [dccp, sctp, rds, tipc, cramfs, freevxfs, jffs2, hfs, hfsplus]
 
@@ -102,53 +176,6 @@
           set_fact:
             reboot_required: true
           when: (cmdline_extlinux is changed) or (cmdline_grub is changed) or (cmdline_rpi is changed)
-
-    # --------------------------------------------------------------------- audit
-    - name: Audit
-      tags: [audit]
-      block:
-        - name: Install audit
-          community.general.apk:
-            name: audit
-            state: present
-            update_cache: true
-
-        - name: Write audit rules
-          copy:
-            dest: /etc/audit/rules.d/50-hardening.rules
-            mode: "0640"
-            content: |
-              # Managed by ansible (alpine/hardening.yml)
-              # Identity and privilege
-              -w /etc/passwd -p wa -k identity
-              -w /etc/shadow -p wa -k identity
-              -w /etc/group -p wa -k identity
-              -w /etc/gshadow -p wa -k identity
-              -w /etc/doas.conf -p wa -k privilege
-              # SSH config
-              -w /etc/ssh/sshd_config -p wa -k sshd
-              -w /etc/ssh/sshd_config.d/ -p wa -k sshd
-              # Package sources and scheduled jobs
-              -w /etc/apk/repositories -p wa -k apk
-              -w /etc/periodic/ -p wa -k cron
-              # Kernel modules
-              -a always,exit -F arch={{ audit_arch }} -S init_module,finit_module,delete_module -k modules
-              # Time changes
-              -a always,exit -F arch={{ audit_arch }} -S adjtimex,settimeofday,clock_settime -k time
-              # Mounts and hostname
-              -a always,exit -F arch={{ audit_arch }} -S mount -k mount
-              -a always,exit -F arch={{ audit_arch }} -S sethostname -k hostname
-              {% if audit_immutable %}
-              # Lock rules until reboot
-              -e 2
-              {% endif %}
-          notify: Load audit rules
-
-        - name: Enable and start auditd
-          service:
-            name: auditd
-            enabled: true
-            state: started
 
     # -------------------------------------------------------------------- sysctl
     - name: Sysctl
@@ -382,6 +409,138 @@
             enabled: true
             state: started
 
+    # --------------------------------------------------------------------- audit
+    # Runs last: watches are only added for directories that exist, and the
+    # sections above create some of them (/etc/fail2ban, /etc/nftables.d).
+    - name: Audit
+      tags: [audit]
+      block:
+        - name: Install audit
+          community.general.apk:
+            name: audit
+            state: present
+            update_cache: true
+
+        # musl reads its library search path from /etc/ld-musl-<arch>.path
+        - name: Find the musl dynamic loader
+          find:
+            paths: /lib
+            patterns: "ld-musl-*.so.1"
+            file_type: any
+          register: audit_musl_loader
+
+        - name: Check which watched directories exist
+          stat:
+            path: "{{ item.path if item.dir | default(false) else item.path | dirname }}"
+          loop: "{{ audit_watches }}"
+          loop_control:
+            label: "{{ item.path }}"
+          register: audit_watch_stat
+
+        # Alpine's audit package ships no base rules
+        - name: Write base audit rules
+          copy:
+            dest: /etc/audit/rules.d/10-base.rules
+            mode: "0640"
+            content: |
+              # Managed by ansible (alpine/hardening.yml)
+              # Remove any existing rules
+              -D
+              # Buffer size (also set on the kernel command line)
+              -b 8192
+              # On failure: printk, don't panic
+              -f 1
+          notify: Load audit rules
+
+        - name: Write audit rules
+          copy:
+            dest: /etc/audit/rules.d/50-hardening.rules
+            mode: "0640"
+            content: |
+              {% set arch = audit_arch %}
+              {% set x86 = ansible_facts['architecture'] == 'x86_64' %}
+              {% set user = '-F auid>=' ~ audit_uid_min ~ ' -F auid!=unset' %}
+              # Managed by ansible (alpine/hardening.yml)
+              # Selected from https://github.com/Neo23x0/auditd, adapted to Alpine.
+              # aarch64 has no legacy syscalls (open, chmod, unlink, ...), so those
+              # are only added on x86_64.
+
+              ## File watches
+              {% for w in audit_watch_stat.results | selectattr('stat.exists') | map(attribute='item') %}
+              -a always,exit -F {{ 'dir' if w.dir | default(false) else 'path' }}={{ w.path }} -F perm={{ w.perm | default('wa') }} -k {{ w.key }}
+              {% endfor %}
+              {% for f in audit_musl_loader.files %}
+              -a always,exit -F path=/etc/{{ f.path | basename | regex_replace('\.so\.1$', '.path') }} -F perm=wa -k libpath
+              {% endfor %}
+
+              ## Kernel modules, kexec, swap
+              -a always,exit -F arch={{ arch }} -S init_module,finit_module,delete_module -k modules
+              -a always,exit -F arch={{ arch }} -S kexec_load,kexec_file_load -k kexec
+              -a always,exit -F arch={{ arch }} -S swapon,swapoff -F auid!=unset -k swap
+
+              ## Time, mounts, hostname
+              -a always,exit -F arch={{ arch }} -S adjtimex,settimeofday,clock_settime -k time
+              -a always,exit -F arch={{ arch }} -S mount,umount2 -k mount
+              -a always,exit -F arch={{ arch }} -S sethostname,setdomainname -k hostname
+
+              ## Permission and ownership changes by users
+              -a always,exit -F arch={{ arch }} -S {{ 'chmod,' if x86 }}fchmod,fchmodat {{ user }} -k perm_mod
+              -a always,exit -F arch={{ arch }} -S {{ 'chown,lchown,' if x86 }}fchown,fchownat {{ user }} -k perm_mod
+              -a always,exit -F arch={{ arch }} -S setxattr,lsetxattr,fsetxattr,removexattr,lremovexattr,fremovexattr {{ user }} -k perm_mod
+
+              ## Attack techniques: process injection, in-memory execution,
+              ## eBPF, exploitation primitives
+              -a always,exit -F arch={{ arch }} -S ptrace -k tracing
+              -a always,exit -F arch={{ arch }} -S process_vm_readv,process_vm_writev -k process_vm
+              -a always,exit -F arch={{ arch }} -S memfd_create -k anon_file_create
+              -a always,exit -F arch={{ arch }} -S bpf -k bpf
+              -a always,exit -F arch={{ arch }} -S userfaultfd -k userfaultfd
+              ## io_uring operations bypass syscall auditing: log at least the setup
+              -a always,exit -F arch={{ arch }} -S io_uring_setup -k io_uring
+              {% if arch == 'b64' %}
+              ## Any 32-bit syscall on a 64-bit system is suspicious
+              -a always,exit -F arch=b32 -S all -k 32bit_abi
+              {% endif %}
+              {% if audit_telemetry | bool %}
+
+              ## Telemetry (audit_telemetry)
+              -a always,exit -F arch={{ arch }} -S execve,execveat -k process_creation
+              -a always,exit -F arch={{ arch }} -S connect -F a2=16 -F success=1 -k network_connect_4
+              -a always,exit -F arch={{ arch }} -S connect -F a2=28 -F success=1 -k network_connect_6
+              -a always,exit -F arch={{ arch }} -S {{ 'open,creat,' if x86 }}openat,openat2,open_by_handle_at,truncate,ftruncate -F exit=-EACCES {{ user }} -k file_access
+              -a always,exit -F arch={{ arch }} -S {{ 'open,creat,' if x86 }}openat,openat2,open_by_handle_at,truncate,ftruncate -F exit=-EPERM {{ user }} -k file_access
+              -a always,exit -F arch={{ arch }} -S {{ 'unlink,rmdir,rename,renameat,' if x86 }}unlinkat,renameat2 {{ user }} -k delete
+              {% endif %}
+              {% if audit_immutable | bool %}
+
+              ## Lock rules until reboot
+              -e 2
+              {% endif %}
+          notify: Load audit rules
+
+        - name: Size audit log retention
+          lineinfile:
+            path: /etc/audit/auditd.conf
+            regexp: '^{{ item.key }}\s*='
+            line: "{{ item.key }} = {{ item.value }}"
+          loop:
+            - { key: max_log_file, value: "{{ audit_max_log_file }}" }
+            - { key: num_logs, value: "{{ audit_num_logs }}" }
+            - { key: max_log_file_action, value: ROTATE }
+            - { key: space_left, value: "{{ audit_space_left }}" }
+            - { key: space_left_action, value: SYSLOG }
+            - { key: admin_space_left, value: "{{ audit_admin_space_left }}" }
+            - { key: admin_space_left_action, value: SUSPEND }
+          loop_control:
+            label: "{{ item.key }}"
+          notify: Reload auditd config
+
+        - name: Enable and start auditd
+          service:
+            name: auditd
+            enabled: true
+            state: started
+
     # ------------------------------------------------------------------- summary
     - name: Reboot reminder
       tags: [always]
@@ -398,6 +557,9 @@
 
     - name: Load audit rules
       command: augenrules --load
+
+    - name: Reload auditd config
+      command: rc-service auditd reload_auditd
 
     - name: Reload sysctl
       command: sysctl -e -p /etc/sysctl.d/90-hardening.conf

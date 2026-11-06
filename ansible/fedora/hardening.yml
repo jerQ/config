@@ -103,7 +103,7 @@
               # Mounts and hostname
               -a always,exit -F arch={{ audit_arch }} -S mount -k mount
               -a always,exit -F arch={{ audit_arch }} -S sethostname -k hostname
-              {% if audit_immutable %}
+              {% if audit_immutable | bool %}
               # Lock rules until reboot
               -e 2
               {% endif %}
