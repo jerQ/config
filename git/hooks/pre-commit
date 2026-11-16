@@ -1,0 +1,30 @@
+#!/usr/bin/env bash
+# Global pre-commit hook: scan staged changes for secrets with gitleaks,
+# then run the repository's own pre-commit hook if it has one.
+
+if ! command -v gitleaks >/dev/null 2>&1; then
+  echo "pre-commit: gitleaks is not installed, commit blocked." >&2
+  echo "Install it with: sudo dnf install gitleaks" >&2
+  exit 1
+fi
+
+# Use the repo's own .gitleaks.toml if it has one, otherwise the global config.
+cfg_args=()
+top="$(git rev-parse --show-toplevel)"
+if [ ! -f "$top/.gitleaks.toml" ] && [ -f "$HOME/.config/gitleaks/gitleaks.toml" ]; then
+  cfg_args=(--config "$HOME/.config/gitleaks/gitleaks.toml")
+fi
+
+if ! gitleaks git --pre-commit --staged --redact --no-banner --verbose "${cfg_args[@]}"; then
+  echo >&2
+  echo "pre-commit: gitleaks found possible secrets in staged changes. Commit blocked." >&2
+  echo "Remove the secret, or if it is a false positive, add the finding's" >&2
+  echo "fingerprint to .gitleaksignore in the repository root." >&2
+  exit 1
+fi
+
+local_hook="$(git rev-parse --git-common-dir)/hooks/pre-commit"
+if [ -x "$local_hook" ]; then
+  exec "$local_hook" "$@"
+fi
+exit 0

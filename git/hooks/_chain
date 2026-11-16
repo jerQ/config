@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+# Passthrough: runs the repository's own hook of the same name, if any.
+# Needed because global core.hooksPath disables .git/hooks otherwise.
+name="$(basename "$0")"
+local_hook="$(git rev-parse --git-common-dir 2>/dev/null)/hooks/$name"
+if [ -x "$local_hook" ]; then
+  exec "$local_hook" "$@"
+fi
+exit 0

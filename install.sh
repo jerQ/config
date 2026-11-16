@@ -102,6 +102,16 @@ else
     echo "  zsh plugins already sourced in ~/.zshrc"
 fi
 
+echo "==> git hooks"
+link "$REPO/git/hooks" "$HOME/.config/git/hooks"
+
+if [ "$(git config --global --get core.hooksPath || true)" != "$HOME/.config/git/hooks" ]; then
+    git config --global core.hooksPath "$HOME/.config/git/hooks"
+    echo "  set core.hooksPath to ~/.config/git/hooks"
+else
+    echo "  core.hooksPath already set"
+fi
+
 echo "==> gitleaks"
 link "$REPO/gitleaks/gitleaks.toml" "$HOME/.config/gitleaks/gitleaks.toml"
 
