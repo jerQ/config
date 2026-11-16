@@ -102,8 +102,9 @@ else
     echo "  zsh plugins already sourced in ~/.zshrc"
 fi
 
-echo "==> git hooks"
+echo "==> git hooks and global ignore"
 link "$REPO/git/hooks" "$HOME/.config/git/hooks"
+link "$REPO/git/ignore" "$HOME/.config/git/ignore"
 
 if [ "$(git config --global --get core.hooksPath || true)" != "$HOME/.config/git/hooks" ]; then
     git config --global core.hooksPath "$HOME/.config/git/hooks"

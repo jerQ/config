@@ -60,7 +60,7 @@ zsh-autosuggestions and zsh-syntax-highlighting plugins. See [zsh/README.md](zsh
 
 ## git
 
-Global git hooks: gitleaks secret scan before every commit. See [git/README.md](git/README.md).
+Global git hooks (gitleaks secret scan before every commit) and global ignore file. See [git/README.md](git/README.md).
 
 ---
 
