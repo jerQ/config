@@ -1,0 +1,84 @@
+# Global gitleaks config: gitleaks' built-in rules plus rules for Wi-Fi
+# credentials, plain passwords and account names, which the built-in rules miss.
+# Used by ~/.config/git/hooks/pre-commit unless a repo has its own .gitleaks.toml.
+
+title = "global config: defaults + wifi/password/account rules"
+
+[extend]
+useDefault = true
+
+# A quoted key needs an operator (=, :=, :, =>); a bare space only separates an
+# unquoted key (#define X "v"), so lists of quoted file names such as
+# "passphrase.c" "serial_protocol.c" or "wifi.c" "main.c" are not findings.
+
+# --- Wi-Fi -------------------------------------------------------------------
+
+# WIFI_SSID = "Net", #define WLAN_PASS "x", ssid="Net", wifi_password: 'x', ...
+[[rules]]
+id = "wifi-credential"
+description = "Wi-Fi SSID or password assigned as a quoted literal"
+regex = '''(?i)\b[\w.-]*(?:wifi|wlan|ssid|wpa|psk|ap_?pass)[\w.-]*(?:["']?\s*(?:=|:=|:|=>|,)\s*|\s+)["']([^"'\n]{1,64})["']'''
+secretGroup = 1
+keywords = ["wifi", "wlan", "ssid", "wpa", "psk", "ap_pass", "appass"]
+
+# Unquoted values in config-style files: ssid=Net, psk=secret, wifi_pass: x
+[[rules]]
+id = "wifi-credential-config"
+description = "Wi-Fi SSID or password in a config file"
+regex = '''(?im)^\s*[\w.-]*(?:wifi|wlan|ssid|wpa|psk)[\w.-]*\s*[:=]\s*([^\s"'#;,(){}\[\]]{2,64})\s*$'''
+path = '''(?i)(\.(conf|cfg|ini|env|ya?ml|toml|properties|nmconnection)$|wpa_supplicant|/\.env[^/]*$|^\.env)'''
+secretGroup = 1
+keywords = ["wifi", "wlan", "ssid", "wpa", "psk"]
+
+# 64-hex-character WPA pre-shared key anywhere
+[[rules]]
+id = "wpa-psk-hex"
+description = "WPA pre-shared key in hex form"
+regex = '''(?i)\bpsk\s*[:=]\s*["']?([0-9a-f]{64})\b'''
+secretGroup = 1
+keywords = ["psk"]
+
+# nmcli dev wifi connect <SSID> password <PASS>
+[[rules]]
+id = "nmcli-wifi"
+description = "Wi-Fi network or password in an nmcli command"
+regex = '''(?i)\bwifi\s+connect\s+["']?([^"'\s]+)["']?(?:\s+password\s+["']?([^"'\s]+))?'''
+keywords = ["nmcli", "connect"]
+
+# --- Passwords and accounts --------------------------------------------------
+
+# password = "x", MQTT_PASSWORD: 'x', #define DB_PASS "x", passphrase => "x"
+[[rules]]
+id = "password-literal"
+description = "Password or passphrase assigned as a quoted literal"
+regex = '''(?i)\b[\w.-]*(?:passw(?:or)?d|passwd|pwd|pass|passphrase|secret)[\w.-]*(?:["']?\s*(?:=|:=|:|=>)\s*|\s+)["']([^"'\n]{3,128})["']'''
+secretGroup = 1
+keywords = ["pass", "pwd", "secret"]
+
+# username = "x", MQTT_USER: 'x', account_name = "x"
+[[rules]]
+id = "account-name-literal"
+description = "Account name or username assigned as a quoted literal"
+regex = '''(?i)\b[\w.-]*(?:user_?name|login_?name|account_?name|_user|_login)\b(?:["']?\s*(?:=|:=|:|=>)\s*|\s+)["']([^"'\n]{2,64})["']'''
+secretGroup = 1
+keywords = ["user", "login", "account"]
+
+# --- Allowed values (placeholders, references to env/config) -----------------
+
+[[allowlists]]
+description = "Placeholders and references, not real values"
+regexTarget = "secret"
+regexes = [
+  '''^\s*$''',
+  '''^<[^>]*>$''',                         # <WIFI_SSID>
+  '''^\$''',                               # $VAR, ${VAR}
+  '''^%[\w(]''',                           # %s, %(name)s
+  '''^\{\{.*\}\}$''',                      # {{ template }}
+  '''^\{[\w.]*\}$''',                      # {name}
+  '''^\*+$''',                             # ****
+  '''^[xX.]+$''',                          # xxxx, ...
+  '''(?i)^(your|my)[_-]?\w*$''',           # your_password, my_ssid
+  '''(?i)^(changeme|change[_-]me|example\w*|placeholder|dummy|redacted|todo|tbd|none|null|nil|true|false|undefined)$''',
+  '''(?i)^(password|passwd|pass|secret|ssid|wifi|username|user|admin|test|testing|demo|sample)$''',
+  '''(?i)getenv|environ|process\.env|secrets\.''',
+]

@@ -58,6 +58,12 @@ zsh-autosuggestions and zsh-syntax-highlighting plugins. See [zsh/README.md](zsh
 
 ---
 
+## gitleaks
+
+Global gitleaks config for the pre-commit secret scan. See [gitleaks/README.md](gitleaks/README.md).
+
+---
+
 ## opencode
 
 OpenCode configuration. See [opencode/README.md](opencode/README.md).

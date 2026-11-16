@@ -102,6 +102,9 @@ else
     echo "  zsh plugins already sourced in ~/.zshrc"
 fi
 
+echo "==> gitleaks"
+link "$REPO/gitleaks/gitleaks.toml" "$HOME/.config/gitleaks/gitleaks.toml"
+
 echo "==> opencode"
 link "$REPO/opencode/opencode.json" "$HOME/.config/opencode/opencode.json"
 

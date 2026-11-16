@@ -17,6 +17,7 @@ Personal dotfiles and system configuration. No build system, no tests, no linter
 | `env/env.zsh` | PATH and environment variables for zsh | `~/.env.zsh`, sourced from `.zshrc` |
 | `tmux-config/` | Tmux configuration and plugins | `~/.config/tmux` (directory symlink) |
 | `neovim-minimal/` | Single-file Neovim config using native `vim.pack` | `~/.config/nvim` (directory symlink) |
+| `gitleaks/gitleaks.toml` | Global gitleaks rules for the pre-commit secret scan | `~/.config/gitleaks/gitleaks.toml` |
 | `opencode/opencode.json` | OpenCode configuration | `~/.config/opencode/opencode.json` |
 | `starship/starship.toml` | Starship prompt config | `~/.config/starship.toml` |
 | `zsh/` | Zsh plugins (autosuggestions, syntax-highlighting) | `~/.config/zsh` (directory symlink) |
