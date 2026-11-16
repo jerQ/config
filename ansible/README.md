@@ -46,6 +46,8 @@ ansible-playbook -i inventory.ini debian/packages.yml debian/neovim.yml common/s
 
 A few package names differ between the OSes (e.g. `gcc-c++`/`g++`, `golang`/`golang-go`). `doctl` is Fedora-only — it isn't packaged in the standard Debian/Ubuntu apt repos and needs manual install there.
 
+`gitleaks` (for the global pre-commit hook in [`git/`](../git/README.md)) comes from dnf on Fedora. Debian and Alpine import `common/gitleaks.yml`, which installs the latest upstream release binary into `/usr/local/bin`, checksum-verified against the release's checksums file. Debian 13 and Ubuntu 24.04 package 8.16, which lacks the `gitleaks git` subcommand the hook uses, so with it every commit would be blocked. Alpine v3.24 doesn't package it at all (only edge/testing). The binary is static, so it also runs on musl. It is only downloaded when the installed version differs from the latest release.
+
 ## neovim.yml
 
 Neovim comes from the distro repos (current Fedora and Debian/Ubuntu releases ship a version new enough for `vim.pack`). The LSP servers used by `neovim-minimal/init.lua`:

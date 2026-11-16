@@ -33,3 +33,6 @@
         name: "{{ packages }}"
         state: present
         update_cache: true
+
+# Distro gitleaks (8.16) is too old for the pre-commit hook
+- import_playbook: ../common/gitleaks.yml

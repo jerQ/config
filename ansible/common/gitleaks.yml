@@ -1,0 +1,73 @@
+---
+# gitleaks for the global pre-commit hook (git/hooks/pre-commit), from the
+# upstream GitHub release. Imported by debian/packages.yml and
+# alpine/packages.yml; Fedora installs the dnf package instead.
+#   - Debian 13 / Ubuntu 24.04 ship 8.16, which lacks the `gitleaks git`
+#     subcommand the hook uses: with it, every commit would be blocked.
+#   - Alpine v3.24 doesn't package gitleaks (only edge/testing does).
+# The release binary is static (no glibc), so it runs on musl too.
+- name: Install gitleaks (upstream release)
+  hosts: all
+  become: true
+
+  vars:
+    gitleaks_bin: /usr/local/bin/gitleaks
+    gitleaks_arch_map:
+      x86_64: x64
+      aarch64: arm64
+
+  tasks:
+    - name: Fetch latest gitleaks release
+      uri:
+        url: https://api.github.com/repos/gitleaks/gitleaks/releases/latest
+        return_content: true
+      register: gitleaks_release
+
+    - name: Set gitleaks version and arch facts
+      set_fact:
+        gitleaks_version: "{{ gitleaks_release.json.tag_name | regex_replace('^v', '') }}"
+        gitleaks_arch: "{{ gitleaks_arch_map[ansible_facts['architecture']] }}"
+
+    - name: Check installed gitleaks version
+      command: "{{ gitleaks_bin }} version"
+      register: gitleaks_installed
+      changed_when: false
+      failed_when: false
+
+    - name: Install gitleaks {{ gitleaks_version }}
+      when: gitleaks_installed.stdout | default('') | trim != gitleaks_version
+      vars:
+        gitleaks_url: https://github.com/gitleaks/gitleaks/releases/download/v{{ gitleaks_version }}
+      block:
+        - name: Create temporary directory
+          tempfile:
+            state: directory
+          register: gitleaks_tmp
+
+        # Verified against the release's checksums file
+        - name: Download gitleaks release archive
+          get_url:
+            url: "{{ gitleaks_url }}/gitleaks_{{ gitleaks_version }}_linux_{{ gitleaks_arch }}.tar.gz"
+            dest: "{{ gitleaks_tmp.path }}/gitleaks.tar.gz"
+            checksum: "sha256:{{ gitleaks_url }}/gitleaks_{{ gitleaks_version }}_checksums.txt"
+
+        # Plain tar instead of unarchive, which needs GNU tar (Alpine has busybox)
+        - name: Extract gitleaks binary
+          command: tar -xzf gitleaks.tar.gz gitleaks
+          args:
+            chdir: "{{ gitleaks_tmp.path }}"
+
+        - name: Install gitleaks into PATH
+          copy:
+            src: "{{ gitleaks_tmp.path }}/gitleaks"
+            dest: "{{ gitleaks_bin }}"
+            remote_src: true
+            owner: root
+            group: root
+            mode: "0755"
+      always:
+        - name: Remove temporary directory
+          file:
+            path: "{{ gitleaks_tmp.path }}"
+            state: absent
+          when: gitleaks_tmp.path is defined

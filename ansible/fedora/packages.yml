@@ -27,6 +27,7 @@
       - ansible
       - podman
       - doctl
+      - gitleaks      # secret scan for the global pre-commit hook (git/)
 
   tasks:
     - name: Install packages

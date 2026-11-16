@@ -4,7 +4,7 @@ Global git hooks. Scans every commit for secrets with [gitleaks](../gitleaks/REA
 
 Deploy: `install.sh` symlinks `hooks/` → `~/.config/git/hooks` (directory symlink) and sets `git config --global core.hooksPath ~/.config/git/hooks` if it isn't set already. `~/.gitconfig` itself is not in this repo: it holds the user's name and email.
 
-Requires `gitleaks` installed (Fedora: `sudo dnf install gitleaks`). Without it, the pre-commit hook blocks every commit.
+Requires `bash` and a current `gitleaks` (tested with 8.30.1; the hook uses the `gitleaks git` subcommand). Without them, the pre-commit hook blocks every commit. The `packages.yml` playbooks install both (see [ansible/README.md](../ansible/README.md#packagesyml)). The Debian/Ubuntu apt package (8.16) is too old.
 
 ## Hooks
 

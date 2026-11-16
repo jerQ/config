@@ -4,7 +4,7 @@ Global [gitleaks](https://github.com/gitleaks/gitleaks) config: gitleaks' built-
 
 Deploy: `install.sh` symlinks `gitleaks.toml` → `~/.config/gitleaks/gitleaks.toml`.
 
-Requires `gitleaks` installed (Fedora: `sudo dnf install gitleaks`). The global git pre-commit hook (`~/.config/git/hooks/pre-commit`, via `core.hooksPath`) scans staged changes with this config, unless a repository has its own `.gitleaks.toml`.
+Requires a current `gitleaks` (tested with 8.30.1; the config uses the `[[allowlists]]` format), installed by the `packages.yml` playbooks (see [ansible/README.md](../ansible/README.md#packagesyml)). The global git pre-commit hook (`~/.config/git/hooks/pre-commit`, via `core.hooksPath`) scans staged changes with this config, unless a repository has its own `.gitleaks.toml`.
 
 ## Rules
 

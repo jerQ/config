@@ -36,3 +36,8 @@
         name: "{{ packages }}"
         state: present
         update_cache: true
+
+# Not packaged in Alpine stable
+- import_playbook: ../common/gitleaks.yml
+  vars:
+    ansible_become_method: community.general.doas
