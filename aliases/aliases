@@ -67,3 +67,7 @@ alias caps2ctrl='setxkbmap -option ctrl:nocaps'
 
 # ESPRESSIF
 alias esp='source "$HOME/.espressif/tools/activate_idf_v6.1.sh"'
+
+# ZED
+alias zed='flatpak run dev.zed.Zed'
+
