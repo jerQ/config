@@ -4,7 +4,9 @@
 
 if ! command -v gitleaks >/dev/null 2>&1; then
   echo "pre-commit: gitleaks is not installed, commit blocked." >&2
-  echo "Install it with: sudo dnf install gitleaks" >&2
+  echo "Install it with the packages playbook for this OS, run from the config repo's ansible/:" >&2
+  echo "  ansible-playbook -i inventory.ini <fedora|debian|alpine>/packages.yml" >&2
+  echo "(Fedora: sudo dnf install gitleaks; Debian/Alpine need the upstream release, see common/gitleaks.yml)" >&2
   exit 1
 fi
 
