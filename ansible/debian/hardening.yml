@@ -8,6 +8,10 @@
 - name: Harden Debian/Ubuntu
   hosts: all
   become: true
+  # Run notified handlers (bootloader config, audit rules) even when a later
+  # task fails. Otherwise a failed run leaves e.g. /etc/default/grub edited but
+  # grub.cfg stale, and later runs see no change and never regenerate it.
+  force_handlers: true
 
   vars:
     # Make audit rules immutable (-e 2) until the next reboot.
@@ -479,8 +483,16 @@
     - name: Update GRUB config
       command: update-grub
 
+    # augenrules exits 0 without loading anything while the rules are
+    # immutable (-e 2). Fail instead, so the run doesn't look successful.
+    # At boot, auditd runs augenrules --load before anything locks the rules.
     - name: Load audit rules
-      command: augenrules --load
+      shell: |
+        if [ "$(auditctl -s | awk '$1 == "enabled" { print $2 }')" = 2 ]; then
+          echo "Audit rules are immutable (-e 2) until reboot: reboot to load the new rules." >&2
+          exit 1
+        fi
+        augenrules --load
 
     # SIGHUP makes auditd re-read auditd.conf
     - name: Reload auditd config

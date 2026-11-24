@@ -121,7 +121,7 @@ Override any of these with `-e`, in the inventory, or in `group_vars`/`host_vars
 
 | Variable | Default | OS | Meaning |
 |----------|---------|----|---------|
-| `audit_immutable` | `false` | all | Lock the audit rules (`-e 2`) until the next reboot |
+| `audit_immutable` | `false` | all | Lock the audit rules (`-e 2`) until the next reboot. Changing rules while they are locked makes the run fail with a reboot reminder (on Alpine it first rebuilds `audit.rules`, which auditd loads at boot) |
 | `audit_telemetry` | `false` | all | Add exec, connect, failed access and delete events. High volume: only useful when logs are shipped to a SIEM |
 | `audit_32bit_abi` | `true` | all | Log every 32-bit syscall. Turn off on hosts that run 32-bit software (Steam, Wine) |
 | `audit_uid_min` | `1000` | all | First login UID, used by the rules about human activity |

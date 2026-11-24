@@ -9,6 +9,10 @@
   hosts: all
   become: true
   become_method: community.general.doas
+  # Run notified handlers (bootloader config, audit rules) even when a later
+  # task fails. Otherwise a failed run leaves e.g. /etc/default/grub edited but
+  # grub.cfg stale, and later runs see no change and never regenerate it.
+  force_handlers: true
 
   vars:
     # LSMs to enable on the kernel command line. linux-lts builds AppArmor in,
@@ -511,8 +515,23 @@
     - name: Update GRUB config
       command: grub-mkconfig -o /boot/grub/grub.cfg
 
+    # augenrules exits 0 without touching audit.rules while the rules are
+    # immutable (-e 2), and Alpine's auditd loads audit.rules at boot, not
+    # rules.d: every reboot would lock in the old rules again. So rebuild
+    # audit.rules with augenrules' immutable check removed, then fail, since
+    # the new rules only load after a reboot.
     - name: Load audit rules
-      command: augenrules --load
+      shell: |
+        if [ "$(auditctl -s | awk '$1 == "enabled" { print $2 }')" != 2 ]; then
+          exec augenrules --load
+        fi
+        tmp=$(mktemp)
+        sed '/^[[:space:]]*check_immutable[[:space:]]*$/d' /usr/sbin/augenrules > "$tmp"
+        sh "$tmp"; rc=$?
+        rm -f "$tmp"
+        [ "$rc" -eq 0 ] || exit "$rc"
+        echo "Audit rules are immutable (-e 2) until reboot. audit.rules was rebuilt: reboot to load the new rules." >&2
+        exit 1
 
     - name: Reload auditd config
       command: rc-service auditd reload_auditd
