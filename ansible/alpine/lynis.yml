@@ -1,0 +1,68 @@
+---
+# Lynis with a plugin that checks the settings of alpine/hardening.yml
+# (plugin_alpine_hardening_phase2). Not part of site.yml: run on demand, then
+#   doas lynis audit system
+# Alpine v3.24 doesn't package Lynis, so it's cloned from upstream at the
+# latest release tag into /usr/local/lynis, where Lynis finds its include
+# files, database and plugins on its own.
+- name: Install Lynis and the alpine_hardening plugin
+  hosts: all
+  become: true
+  become_method: community.general.doas
+
+  vars:
+    lynis_dir: /usr/local/lynis
+
+  tasks:
+    - name: Install git
+      community.general.apk:
+        name: git
+        state: present
+        update_cache: true
+
+    - name: Fetch latest Lynis release
+      uri:
+        url: https://api.github.com/repos/CISOfy/lynis/releases/latest
+        return_content: true
+      register: lynis_release
+
+    # Running as root: the clone is owned by root, which Lynis requires
+    - name: Clone Lynis {{ lynis_release.json.tag_name }}
+      git:
+        repo: https://github.com/CISOfy/lynis.git
+        dest: "{{ lynis_dir }}"
+        version: "{{ lynis_release.json.tag_name }}"
+        depth: 1
+
+    - name: Link lynis into PATH
+      file:
+        src: "{{ lynis_dir }}/lynis"
+        dest: /usr/local/bin/lynis
+        state: link
+
+    # Copied, not linked to the repo: Lynis only runs plugins owned by root
+    # with mode 600/640/644/400.
+    - name: Install the alpine_hardening plugin
+      copy:
+        src: plugin_alpine_hardening_phase2
+        dest: "{{ lynis_dir }}/plugins/plugin_alpine_hardening_phase2"
+        owner: root
+        group: root
+        mode: "0640"
+
+    - name: Create /etc/lynis
+      file:
+        path: /etc/lynis
+        state: directory
+        owner: root
+        group: root
+        mode: "0750"
+
+    - name: Enable the plugin in custom.prf
+      lineinfile:
+        path: /etc/lynis/custom.prf
+        line: plugin=alpine_hardening
+        create: true
+        owner: root
+        group: root
+        mode: "0640"

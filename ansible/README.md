@@ -17,6 +17,7 @@ Playbooks for system provisioning, split per OS. Pick the directory that matches
 | `<os>/gui.yml` | Install GUI apps (`keepassxc`) — skip on headless machines |
 | `<os>/neovim.yml` | Install Neovim, `ripgrep`, `fzf`, `clangd` and `pip` from the distro repos, then run `common/lsp.yml` |
 | `<os>/hardening.yml` | Optional security hardening (MAC, auditd, sysctl, firewall, SSH, fail2ban, auto-updates). Skipped in `site.yml` unless `-e hardening=true` is passed. See [Hardening](#hardening) |
+| `alpine/lynis.yml` | Install Lynis with a plugin that checks the settings of `alpine/hardening.yml`. Not part of `site.yml`. See [Lynis](#lynis) |
 | `common/lsp.yml` | Install `pyright` (pip) and `lua-language-server` (GitHub release, x86_64 or aarch64) |
 | `common/starship.yml` | Install `starship` into `~/.local/bin` via the official script (no sudo) |
 | `common/setup.yml` | Create `~/Devel`, clone config repo, and run `install.sh` (no sudo) |
@@ -114,6 +115,23 @@ Check the result after a reboot:
 - `nft list ruleset` (Alpine, Debian) or `firewall-cmd --list-all` (Fedora)
 - `sshd -T | grep -E 'permitrootlogin|passwordauthentication'`
 - `fail2ban-client status sshd`
+
+On Alpine, the Lynis plugin below runs all of these checks at once.
+
+### Lynis
+
+`alpine/lynis.yml` installs [Lynis](https://github.com/CISOfy/lynis) and a plugin, `alpine/plugin_alpine_hardening_phase2`, that checks every section of `alpine/hardening.yml`:
+
+```sh
+ansible-playbook -i inventory.ini alpine/lynis.yml
+doas lynis audit system
+```
+
+Alpine v3.24 doesn't package Lynis, so the playbook clones the latest release tag into `/usr/local/lynis` and links `/usr/local/bin/lynis`. The plugin is copied there owned by root with mode `0640`, since Lynis skips plugins with other owners or modes, and enabled in `/etc/lynis/custom.prf`.
+
+The plugin checks the live state, not only the files the playbook wrote: running sysctl values, loaded nftables and audit rules, effective sshd options (`sshd -T`), the running fail2ban jail, `/proc/cmdline` and the active LSMs, `/dev/shm` mount options, and services enabled and started. It has one test per tag, `CUST-0010` (apparmor) to `CUST-0090` (audit), shown under "Alpine hardening" in the Lynis output. A failed check is a Lynis warning, and every check counts toward the hardening index. A section whose managed file is missing (its tag was never run) is reported once as a suggestion instead. Like the playbook, an audit watch is skipped when its directory doesn't exist. A warning for a watch therefore means the directory appeared after the audit section ran: rerun `--tags audit`.
+
+The expected values are hardcoded at the top of the plugin. **Keep them in sync with `alpine/hardening.yml`**, and mirror any per-host overrides (`firewall_allowed_tcp`, `firewall_forward_policy`, `audit_32bit_abi`, …) there.
 
 ### Variables
 

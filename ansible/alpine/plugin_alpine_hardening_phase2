@@ -1,0 +1,458 @@
+#!/bin/sh
+
+#########################################################################
+#
+#    * DO NOT REMOVE *
+#-----------------------------------------------------
+# PLUGIN_AUTHOR=jerQ
+# PLUGIN_CATEGORY=security
+# PLUGIN_DATE=2026-11-24
+# PLUGIN_DESC=Settings applied by ansible/alpine/hardening.yml
+# PLUGIN_NAME=alpine_hardening
+# PLUGIN_PACKAGE=all
+# PLUGIN_REQUIRED_TESTS=
+# PLUGIN_VERSION=1.0.0
+#-----------------------------------------------------
+#########################################################################
+#
+# Checks that every section of ansible/alpine/hardening.yml is in effect:
+# the live state (running sysctl values, loaded firewall and audit rules,
+# effective sshd options, ...), not just the files the playbook wrote.
+# A section whose managed file is missing is reported once as "not applied"
+# (its tag was never run) instead of failing every item.
+#
+# Installed by ansible/alpine/lynis.yml. Lynis sources this file into its
+# own shell: variables and functions are prefixed with AH_, and loops never
+# read from a pipe, so AddHP and the warning counters stay in this shell.
+#
+# KEEP IN SYNC with ansible/alpine/hardening.yml (defaults of its vars and the
+# contents it writes). Per-host overrides of those vars must be mirrored here.
+#
+#########################################################################
+#
+    AH_PLAYBOOK="ansible-playbook -i inventory.ini alpine/hardening.yml"
+    AH_MARKER="Managed by ansible (alpine/hardening.yml)"
+
+    # apparmor: kernel_cmdline_args (lsm_list is checked for apparmor only)
+    AH_CMDLINE="audit=1 audit_backlog_limit=8192"
+
+    # sysctl: /etc/sysctl.d/90-hardening.conf
+    AH_SYSCTL="kernel.kptr_restrict=2 kernel.dmesg_restrict=1
+        kernel.unprivileged_bpf_disabled=1 net.core.bpf_jit_harden=2
+        kernel.yama.ptrace_scope=1 kernel.kexec_load_disabled=1
+        fs.protected_hardlinks=1 fs.protected_symlinks=1 fs.protected_fifos=2
+        fs.protected_regular=2 fs.suid_dumpable=0
+        net.ipv4.conf.all.rp_filter=1 net.ipv4.conf.default.rp_filter=1
+        net.ipv4.conf.all.accept_redirects=0 net.ipv4.conf.default.accept_redirects=0
+        net.ipv4.conf.all.secure_redirects=0 net.ipv4.conf.default.secure_redirects=0
+        net.ipv4.conf.all.send_redirects=0 net.ipv4.conf.default.send_redirects=0
+        net.ipv4.conf.all.accept_source_route=0 net.ipv4.conf.default.accept_source_route=0
+        net.ipv4.conf.all.log_martians=1 net.ipv4.conf.default.log_martians=1
+        net.ipv4.tcp_syncookies=1 net.ipv4.icmp_echo_ignore_broadcasts=1
+        net.ipv6.conf.all.accept_redirects=0 net.ipv6.conf.default.accept_redirects=0
+        net.ipv6.conf.all.accept_source_route=0 net.ipv6.conf.default.accept_source_route=0"
+
+    # modules: blacklisted_modules
+    AH_MODULES="dccp sctp rds tipc cramfs freevxfs jffs2 hfs hfsplus"
+
+    # firewall: firewall_allowed_tcp, firewall_forward_policy
+    AH_FW_TCP="22"
+    AH_FW_FORWARD="drop"
+
+    # ssh: sshd_config.d/10-hardening.conf, as lowercase `sshd -T` output
+    AH_SSHD="permitrootlogin=no passwordauthentication=no
+        kbdinteractiveauthentication=no pubkeyauthentication=yes
+        x11forwarding=no maxauthtries=3 logingracetime=30"
+
+    # fail2ban: fail2ban_bantime 1h, fail2ban_findtime 10m (in seconds), fail2ban_maxretry
+    AH_F2B="bantime=3600 findtime=600 maxretry=5"
+
+    # audit: auditd.conf values
+    AH_AUDITD_CONF="max_log_file=50 num_logs=15 max_log_file_action=ROTATE
+        space_left=150 space_left_action=SYSLOG
+        admin_space_left=75 admin_space_left_action=SUSPEND"
+    # audit: audit_watches as type:path:perm:key (f = file, d = directory).
+    # Like the playbook, a watch is skipped when its directory doesn't exist.
+    AH_AUDIT_WATCHES="f:/etc/passwd:wa:identity f:/etc/shadow:wa:identity
+        f:/etc/group:wa:identity f:/etc/gshadow:wa:identity
+        f:/etc/subuid:wa:identity f:/etc/subgid:wa:identity
+        f:/etc/doas.conf:wa:privilege d:/etc/doas.d:wa:privilege
+        f:/etc/login.defs:wa:login f:/etc/securetty:wa:login
+        d:/etc/ssh:wa:sshd d:/root/.ssh:wa:rootkey
+        d:/var/log/audit:rwa:auditlog d:/etc/audit:wa:auditconfig
+        f:/etc/sysctl.conf:wa:sysctl d:/etc/sysctl.d:wa:sysctl
+        d:/etc/modprobe.d:wa:modprobe f:/etc/modules:wa:modprobe
+        d:/etc/modules-load.d:wa:modprobe
+        f:/etc/inittab:wa:init d:/etc/init.d:wa:init d:/etc/conf.d:wa:init
+        d:/etc/runlevels:wa:init d:/etc/local.d:wa:init
+        d:/etc/default:wa:bootloader f:/etc/update-extlinux.conf:wa:bootloader
+        f:/etc/fstab:wa:fstab f:/etc/mdev.conf:wa:mdev
+        d:/etc/crontabs:wa:cron d:/etc/periodic:wa:cron
+        d:/etc/apk:wa:apk
+        f:/etc/profile:wa:shell_profiles d:/etc/profile.d:wa:shell_profiles
+        f:/etc/shells:wa:shell_profiles f:/etc/environment:wa:shell_profiles
+        f:/etc/hosts:wa:network f:/etc/hostname:wa:network
+        f:/etc/resolv.conf:wa:network d:/etc/network:wa:network
+        f:/etc/nftables.nft:wa:firewall d:/etc/nftables.d:wa:firewall
+        d:/etc/fail2ban:wa:firewall
+        d:/etc/apparmor:wa:mac_policy d:/etc/apparmor.d:wa:mac_policy
+        f:/etc/localtime:wa:localtime"
+    # audit: keys of the syscall rules in common/audit-hardening.rules.j2
+    AH_AUDIT_KEYS="modules kexec swap time mount hostname setuid perm_mod
+        tracing process_vm anon_file_create bpf userfaultfd io_uring"
+    # audit_32bit_abi: set to 0 on hosts where the playbook var is false
+    AH_AUDIT_32BIT_ABI=1
+    AH_AUDIT_BACKLOG=8192
+#
+#########################################################################
+#
+    # Helpers. AH_SECTION is the playbook tag of the current test.
+
+    AH_ok() {
+        LogText "Result: OK: $1"
+        Display --indent 4 --text "- $1" --result "${STATUS_OK}" --color GREEN
+        AddHP 1 1
+    }
+
+    # $1 = check, $2 = details (found value)
+    AH_bad() {
+        LogText "Result: WARNING: $1 (found: $2)"
+        Display --indent 4 --text "- $1" --result "${STATUS_WARNING}" --color RED
+        ReportWarning "${TEST_NO}" "alpine/hardening.yml [${AH_SECTION}]: $1" "$2" "text:${AH_PLAYBOOK} --tags ${AH_SECTION}"
+        AddHP 0 1
+    }
+
+    # $1 = exit status (0 = OK), $2 = check, $3 = details.
+    # The status comes first: it must be expanded before any command
+    # substitution in the details, which would reset $? in some shells.
+    AH_check() {
+        if [ "$1" -eq 0 ]; then AH_ok "$2"; else AH_bad "$2" "$3"; fi
+    }
+
+    AH_skip() {
+        LogText "Result: skipped: $1"
+        Display --indent 4 --text "- $1" --result "${STATUS_SKIPPED}" --color WHITE
+    }
+
+    AH_not_applied() {
+        LogText "Result: section ${AH_SECTION} not applied ($1 missing)"
+        Display --indent 2 --text "- Section ${AH_SECTION}" --result "NOT APPLIED" --color YELLOW
+        ReportSuggestion "${TEST_NO}" "alpine/hardening.yml section '${AH_SECTION}' is not applied" "$1" "text:${AH_PLAYBOOK} --tags ${AH_SECTION}"
+    }
+
+    AH_header() {
+        Display --indent 2 --text "- Section ${AH_SECTION}"
+    }
+
+    # Service started (OpenRC)
+    AH_started() {
+        rc-service "$1" status >/dev/null 2>&1
+    }
+
+    # Service added to runlevel $2 (any runlevel when omitted)
+    AH_enabled() {
+        if [ -n "$2" ]; then
+            [ -e "/etc/runlevels/$2/$1" ]
+        else
+            for AH_RL in /etc/runlevels/*; do
+                if [ -e "${AH_RL}/$1" ]; then return 0; fi
+            done
+            return 1
+        fi
+    }
+
+    AH_service() {
+        # $1 = service, $2 = runlevel (optional)
+        AH_enabled "$1" "$2"
+        AH_check $? "$1 service enabled${2:+ in $2 runlevel}" "not in runlevel"
+        AH_started "$1"
+        AH_check $? "$1 service started" "stopped"
+    }
+
+    # Word $1 in space-separated list $2
+    AH_in() {
+        case " $2 " in *" $1 "*) return 0 ;; esac
+        return 1
+    }
+
+    InsertSection "Alpine hardening (ansible/alpine/hardening.yml)"
+#
+#########################################################################
+#
+    # Test        : CUST-0010
+    # Description : AppArmor and kernel command line
+    Register --test-no CUST-0010 --weight L --network NO --category security --description "AppArmor and kernel command line (apparmor)"
+    if [ ${SKIPTEST} -eq 0 ]; then
+        AH_SECTION=apparmor
+        if [ ! -d /etc/apparmor.d ]; then
+            AH_not_applied "/etc/apparmor.d"
+        else
+            AH_header
+            AH_CMD=$(cat /proc/cmdline)
+            AH_LSM=$(cat /sys/kernel/security/lsm 2>/dev/null)
+            AH_in apparmor "$(echo "${AH_LSM}" | tr ',' ' ')"
+            AH_check $? "AppArmor is an active LSM" "lsm: ${AH_LSM:-none}"
+            AH_V=$(echo " ${AH_CMD} " | sed -n 's/.* lsm=\([^ ]*\) .*/\1/p')
+            AH_in apparmor "$(echo "${AH_V}" | tr ',' ' ')"
+            AH_check $? "Kernel command line lsm= includes apparmor" "lsm=${AH_V:-unset}"
+            for AH_ARG in ${AH_CMDLINE}; do
+                AH_in "${AH_ARG}" "${AH_CMD}"
+                AH_check $? "Kernel command line has ${AH_ARG}" "${AH_CMD}"
+            done
+            AH_service apparmor boot
+            AH_N=0
+            if [ -r /sys/kernel/security/apparmor/profiles ]; then
+                AH_N=$(wc -l < /sys/kernel/security/apparmor/profiles)
+            fi
+            [ "${AH_N}" -gt 0 ]
+            AH_check $? "AppArmor profiles loaded (${AH_N})" "0 profiles"
+        fi
+    fi
+#
+#########################################################################
+#
+    # Test        : CUST-0020
+    # Description : Kernel parameters
+    Register --test-no CUST-0020 --weight L --network NO --category security --description "Kernel parameters (sysctl)"
+    if [ ${SKIPTEST} -eq 0 ]; then
+        AH_SECTION=sysctl
+        AH_FILE=/etc/sysctl.d/90-hardening.conf
+        if [ ! -f "${AH_FILE}" ]; then
+            AH_not_applied "${AH_FILE}"
+        else
+            AH_header
+            for AH_KV in ${AH_SYSCTL}; do
+                AH_K=${AH_KV%%=*}; AH_V=${AH_KV#*=}
+                AH_LIVE=$(sysctl -n "${AH_K}" 2>/dev/null)
+                if [ -z "${AH_LIVE}" ]; then
+                    # The playbook loads with sysctl -e: unknown keys are ignored
+                    AH_skip "${AH_K} (not available in this kernel)"
+                    continue
+                fi
+                grep -Eq "^[[:space:]]*${AH_K}[[:space:]]*=[[:space:]]*${AH_V}[[:space:]]*$" "${AH_FILE}"
+                AH_INFILE=$?
+                [ "${AH_LIVE}" = "${AH_V}" ] && [ ${AH_INFILE} -eq 0 ]
+                AH_check $? "${AH_K} = ${AH_V}" "running: ${AH_LIVE}, in ${AH_FILE}: $([ ${AH_INFILE} -eq 0 ] && echo yes || echo no)"
+            done
+            AH_enabled sysctl boot
+            AH_check $? "sysctl service enabled in boot runlevel" "not in runlevel"
+        fi
+    fi
+#
+#########################################################################
+#
+    # Test        : CUST-0030
+    # Description : Blocked kernel modules
+    Register --test-no CUST-0030 --weight L --network NO --category security --description "Blocked kernel modules (modules)"
+    if [ ${SKIPTEST} -eq 0 ]; then
+        AH_SECTION=modules
+        AH_FILE=/etc/modprobe.d/hardening.conf
+        if [ ! -f "${AH_FILE}" ]; then
+            AH_not_applied "${AH_FILE}"
+        else
+            AH_header
+            for AH_M in ${AH_MODULES}; do
+                grep -qx "install ${AH_M} /bin/false" "${AH_FILE}"
+                AH_BLOCKED=$?
+                grep -q "^${AH_M} " /proc/modules
+                AH_LOADED=$?
+                [ ${AH_BLOCKED} -eq 0 ] && [ ${AH_LOADED} -ne 0 ]
+                AH_check $? "Module ${AH_M} blocked and not loaded" "blocked: $([ ${AH_BLOCKED} -eq 0 ] && echo yes || echo no), loaded: $([ ${AH_LOADED} -eq 0 ] && echo yes || echo no)"
+            done
+        fi
+    fi
+#
+#########################################################################
+#
+    # Test        : CUST-0040
+    # Description : /dev/shm mount options
+    Register --test-no CUST-0040 --weight L --network NO --category security --description "/dev/shm mount options (mounts)"
+    if [ ${SKIPTEST} -eq 0 ]; then
+        AH_SECTION=mounts
+        AH_header
+        AH_LIVE=$(awk '$2 == "/dev/shm" { o = $4 } END { print o }' /proc/mounts)
+        AH_FSTAB=$(awk '$1 !~ /^#/ && $2 == "/dev/shm" { o = $4 } END { print o }' /etc/fstab)
+        for AH_O in nosuid nodev noexec; do
+            AH_in "${AH_O}" "$(echo "${AH_LIVE}" | tr ',' ' ')"
+            AH_check $? "/dev/shm mounted with ${AH_O}" "${AH_LIVE:-not mounted}"
+            AH_in "${AH_O}" "$(echo "${AH_FSTAB}" | tr ',' ' ')"
+            AH_check $? "/dev/shm has ${AH_O} in /etc/fstab" "${AH_FSTAB:-no entry}"
+        done
+    fi
+#
+#########################################################################
+#
+    # Test        : CUST-0050
+    # Description : nftables firewall
+    Register --test-no CUST-0050 --weight L --network NO --category security --description "nftables firewall (firewall)"
+    if [ ${SKIPTEST} -eq 0 ]; then
+        AH_SECTION=firewall
+        AH_FILE=/etc/nftables.nft
+        if ! grep -qF "${AH_MARKER}" "${AH_FILE}" 2>/dev/null; then
+            AH_not_applied "${AH_FILE}"
+        else
+            AH_header
+            AH_service nftables
+            AH_IN=$(nft list chain inet filter input 2>/dev/null)
+            echo "${AH_IN}" | grep -q "hook input .*policy drop;"
+            AH_check $? "Input policy is drop" "$(echo "${AH_IN}" | grep -o 'policy [a-z]*' | head -1)"
+            AH_PORTS=$(echo "${AH_IN}" | grep "tcp dport" | sed 's/[^0-9]/ /g')
+            for AH_P in ${AH_FW_TCP}; do
+                AH_in "${AH_P}" "$(echo ${AH_PORTS})"
+                AH_check $? "Inbound TCP ${AH_P} allowed" "allowed: $(echo ${AH_PORTS})"
+            done
+            for AH_P in $(echo ${AH_PORTS}); do
+                AH_in "${AH_P}" "${AH_FW_TCP}"
+                AH_check $? "Inbound TCP ${AH_P} is in firewall_allowed_tcp" "extra open port ${AH_P}"
+            done
+            AH_FWD=$(nft list chain inet filter forward 2>/dev/null | grep -o 'policy [a-z]*' | head -1)
+            [ "${AH_FWD}" = "policy ${AH_FW_FORWARD}" ]
+            AH_check $? "Forward policy is ${AH_FW_FORWARD}" "${AH_FWD:-no forward chain}"
+        fi
+    fi
+#
+#########################################################################
+#
+    # Test        : CUST-0060
+    # Description : OpenSSH server
+    Register --test-no CUST-0060 --weight L --network NO --category security --description "OpenSSH server (ssh)"
+    if [ ${SKIPTEST} -eq 0 ]; then
+        AH_SECTION=ssh
+        AH_FILE=/etc/ssh/sshd_config.d/10-hardening.conf
+        if [ ! -f "${AH_FILE}" ]; then
+            AH_not_applied "${AH_FILE}"
+        else
+            AH_header
+            AH_service sshd
+            AH_FIRST=$(grep -v '^[[:space:]]*\(#\|$\)' /etc/ssh/sshd_config | head -1)
+            [ "${AH_FIRST}" = "Include /etc/ssh/sshd_config.d/*.conf" ]
+            AH_check $? "sshd_config includes sshd_config.d first" "first line: ${AH_FIRST}"
+            AH_EFF=$(sshd -T 2>/dev/null)
+            for AH_KV in ${AH_SSHD}; do
+                AH_K=${AH_KV%%=*}; AH_V=${AH_KV#*=}
+                AH_LIVE=$(echo "${AH_EFF}" | awk -v k="${AH_K}" '$1 == k { print $2; exit }')
+                [ "${AH_LIVE}" = "${AH_V}" ]
+                AH_check $? "sshd ${AH_K} ${AH_V}" "effective: ${AH_LIVE:-unknown}"
+            done
+        fi
+    fi
+#
+#########################################################################
+#
+    # Test        : CUST-0070
+    # Description : fail2ban sshd jail
+    Register --test-no CUST-0070 --weight L --network NO --category security --description "fail2ban sshd jail (fail2ban)"
+    if [ ${SKIPTEST} -eq 0 ]; then
+        AH_SECTION=fail2ban
+        AH_FILE=/etc/fail2ban/jail.d/sshd.local
+        if [ ! -f "${AH_FILE}" ]; then
+            AH_not_applied "${AH_FILE}"
+        else
+            AH_header
+            AH_service fail2ban
+            fail2ban-client status sshd >/dev/null 2>&1
+            AH_check $? "sshd jail active" "fail2ban-client status sshd failed"
+            for AH_KV in ${AH_F2B}; do
+                AH_K=${AH_KV%%=*}; AH_V=${AH_KV#*=}
+                AH_LIVE=$(fail2ban-client get sshd "${AH_K}" 2>/dev/null)
+                [ "${AH_LIVE}" = "${AH_V}" ]
+                AH_check $? "sshd jail ${AH_K} ${AH_V}" "running: ${AH_LIVE:-unknown}"
+            done
+            fail2ban-client get sshd actions 2>/dev/null | grep -q nftables
+            AH_check $? "sshd jail bans with nftables" "$(fail2ban-client get sshd actions 2>/dev/null | tail -1)"
+        fi
+    fi
+#
+#########################################################################
+#
+    # Test        : CUST-0080
+    # Description : Automatic updates
+    Register --test-no CUST-0080 --weight L --network NO --category security --description "Automatic apk upgrades (autoupdate)"
+    if [ ${SKIPTEST} -eq 0 ]; then
+        AH_SECTION=autoupdate
+        AH_FILE=/etc/periodic/daily/apk-upgrade
+        if [ ! -f "${AH_FILE}" ]; then
+            AH_not_applied "${AH_FILE}"
+        else
+            AH_header
+            [ -x "${AH_FILE}" ]
+            AH_check $? "${AH_FILE} is executable" "$(ls -l "${AH_FILE}" | awk '{ print $1 }')"
+            grep -q "^[^#].*/etc/periodic/daily" /etc/crontabs/root 2>/dev/null
+            AH_check $? "root crontab runs /etc/periodic/daily" "no run-parts entry in /etc/crontabs/root"
+            AH_service crond
+        fi
+    fi
+#
+#########################################################################
+#
+    # Test        : CUST-0090
+    # Description : Audit daemon and rules
+    Register --test-no CUST-0090 --weight L --network NO --category security --description "Audit daemon and rules (audit)"
+    if [ ${SKIPTEST} -eq 0 ]; then
+        AH_SECTION=audit
+        AH_FILE=/etc/audit/rules.d/50-hardening.rules
+        if [ ! -f "${AH_FILE}" ]; then
+            AH_not_applied "${AH_FILE}"
+        else
+            AH_header
+            AH_service auditd
+            AH_STATUS=$(auditctl -s 2>/dev/null)
+            AH_V=$(echo "${AH_STATUS}" | awk '$1 == "enabled" { print $2 }')
+            [ "${AH_V}" = 1 ] || [ "${AH_V}" = 2 ]
+            AH_check $? "Auditing enabled" "enabled ${AH_V:-unknown}"
+            AH_V=$(echo "${AH_STATUS}" | awk '$1 == "backlog_limit" { print $2 }')
+            [ "${AH_V}" = "${AH_AUDIT_BACKLOG}" ]
+            AH_check $? "Audit backlog limit ${AH_AUDIT_BACKLOG}" "backlog_limit ${AH_V:-unknown}"
+            AH_V=$(echo "${AH_STATUS}" | awk '$1 == "failure" { print $2 }')
+            [ "${AH_V}" = 1 ]
+            AH_check $? "Audit failure mode printk (-f 1)" "failure ${AH_V:-unknown}"
+
+            AH_RULES=$(auditctl -l 2>/dev/null)
+            # The musl library search path, one watch per loader
+            AH_W="${AH_AUDIT_WATCHES}"
+            for AH_L in /lib/ld-musl-*.so.1; do
+                [ -e "${AH_L}" ] || continue
+                AH_L=${AH_L##*/}
+                AH_W="${AH_W} f:/etc/${AH_L%.so.1}.path:wa:libpath"
+            done
+            for AH_E in ${AH_W}; do
+                AH_T=${AH_E%%:*}; AH_R=${AH_E#*:}
+                AH_P=${AH_R%%:*}; AH_R=${AH_R#*:}
+                AH_PERM=${AH_R%%:*}; AH_K=${AH_R#*:}
+                if [ "${AH_T}" = d ]; then AH_D=${AH_P}; AH_F=dir; else AH_D=${AH_P%/*}; AH_F=path; fi
+                if [ ! -d "${AH_D}" ]; then
+                    LogText "Result: watch ${AH_P} skipped, ${AH_D} doesn't exist"
+                    continue
+                fi
+                # auditctl -l prints path/dir rules as "-w <path> -p <perm> -k <key>"
+                # (directories possibly with a trailing slash), or in -F form
+                echo "${AH_RULES}" | grep -Eq -- "(-w ${AH_P}/? -p ${AH_PERM}|-F ${AH_F}=${AH_P}/? .*-F perm=${AH_PERM}) .*(-k |-F key=)${AH_K}( |\$)"
+                AH_check $? "Watch ${AH_P} (${AH_PERM}, key ${AH_K})" "rule not loaded"
+            done
+
+            AH_K="${AH_AUDIT_KEYS}"
+            case "$(uname -m)" in
+                x86_64|aarch64) if [ ${AH_AUDIT_32BIT_ABI} -eq 1 ]; then AH_K="${AH_K} 32bit_abi"; fi ;;
+            esac
+            for AH_V in ${AH_K}; do
+                echo "${AH_RULES}" | grep -Eq -- "(-k |-F key=)${AH_V}( |\$)"
+                AH_check $? "Syscall rules with key ${AH_V} loaded" "no rule with key ${AH_V}"
+            done
+
+            for AH_KV in ${AH_AUDITD_CONF}; do
+                AH_K=${AH_KV%%=*}; AH_V=${AH_KV#*=}
+                AH_LIVE=$(awk -F= -v k="${AH_K}" '{ gsub(/[[:space:]]/, "") } $1 == k { v = $2 } END { print v }' /etc/audit/auditd.conf)
+                [ "${AH_LIVE}" = "${AH_V}" ]
+                AH_check $? "auditd.conf ${AH_K} = ${AH_V}" "found: ${AH_LIVE:-unset}"
+            done
+        fi
+    fi
+#
+#########################################################################
+#
+    unset AH_CMD AH_LSM AH_V AH_N AH_ARG AH_FILE AH_KV AH_K AH_LIVE AH_INFILE \
+          AH_M AH_BLOCKED AH_LOADED AH_FSTAB AH_O AH_IN AH_PORTS AH_P AH_FWD \
+          AH_FIRST AH_EFF AH_STATUS AH_RULES AH_W AH_L AH_E AH_T AH_R AH_PERM \
+          AH_D AH_F AH_RL AH_SECTION
+
+#EOF

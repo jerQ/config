@@ -5,6 +5,8 @@
 # Tags: apparmor, audit, sysctl, modules, mounts, firewall, ssh, fail2ban, autoupdate
 # Try it first with --check --diff. Keep a second SSH session open while
 # applying the ssh/firewall tags. A reboot is needed for AppArmor and audit=1.
+# Verify with Lynis (alpine/lynis.yml). Its plugin hardcodes the values below:
+# keep plugin_alpine_hardening_phase2 in sync when changing them.
 - name: Harden Alpine
   hosts: all
   become: true
