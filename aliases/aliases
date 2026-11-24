@@ -65,9 +65,12 @@ alias prc='gh pr create'
 alias caps2esc='setxkbmap -option caps:escape'
 alias caps2ctrl='setxkbmap -option ctrl:nocaps'
 
-# ESPRESSIF
-alias esp='source "$HOME/.espressif/tools/activate_idf_v6.1.sh"'
+# Desktop-only aliases, not on Alpine installs
+if [ ! -f /etc/alpine-release ]; then
+    # ESPRESSIF
+    alias esp='source "$HOME/.espressif/tools/activate_idf_v6.1.sh"'
 
-# ZED
-alias zed='flatpak run dev.zed.Zed'
+    # ZED
+    alias zed='flatpak run dev.zed.Zed'
+fi
 

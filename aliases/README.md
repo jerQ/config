@@ -1,6 +1,6 @@
 # aliases
 
-Deploy: `install.sh` symlinks `aliases/aliases` to `~/.aliases` and adds `source "$HOME/.aliases"` to `~/.bashrc`.
+Deploy: `install.sh` symlinks `aliases/aliases` to `~/.aliases` and adds `source "$HOME/.aliases"` to `~/.bashrc` and `~/.zshrc`.
 
 ## Aliases
 
@@ -14,7 +14,6 @@ Deploy: `install.sh` symlinks `aliases/aliases` to `~/.aliases` and adds `source
 | `gr` | `grep -r` — recursive |
 | `gri` | `grep -ri` — recursive + case-insensitive |
 | `ff` | fzf file picker with `cat -n` line-number preview (`fzf --preview 'cat -n {}'`) |
-| `cat` | `bat` — syntax-highlighted pager |
 | `cd` | `z` — zoxide smart directory jump |
 | `fd` | `fdfind` — Debian compat alias (Fedora binary is already `fd`) |
 | `rgi` | `rg -i` — case-insensitive ripgrep |
@@ -24,6 +23,8 @@ Deploy: `install.sh` symlinks `aliases/aliases` to `~/.aliases` and adds `source
 | `fixscreens` | Disable laptop screen, use only HDMI-A-0 |
 | `..` / `...` / `....` | `cd` up 1 / 2 / 3 levels |
 | `caps2esc` / `caps2ctrl` | Remap Caps Lock via xkbmap |
+| `esp` | Activate the ESP-IDF v6.1 environment (`~/.espressif/tools/activate_idf_v6.1.sh`). Not defined on Alpine |
+| `zed` | `flatpak run dev.zed.Zed` — Zed editor via Flatpak. Not defined on Alpine |
 
 ## Functions
 
